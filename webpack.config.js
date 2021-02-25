@@ -16,7 +16,8 @@ module.exports = async (env, options) => {
     entry: {
       polyfill: "@babel/polyfill",
       taskpane: "./src/taskpane/taskpane.js",
-      commands: "./src/commands/commands.js"
+      commands: "./src/commands/commands.js",
+      pacing: "./src/pacing/pacing.js"
     },
     resolve: {
       extensions: [".ts", ".tsx", ".html", ".js"]
@@ -76,7 +77,30 @@ module.exports = async (env, options) => {
         filename: "commands.html",
         template: "./src/commands/commands.html",
         chunks: ["polyfill", "commands"]
-      })
+      }),
+      new HtmlWebpackPlugin({
+        filename: "pacing.html",
+        template: "./src/pacing/pacing.html",
+        chunks: ["polyfill", "pacing"]
+      }),
+      new CopyWebpackPlugin({
+        patterns: [
+        {
+          to: "pacing.css",
+          from: "./src/pacing/pacing.css"
+        },
+        {
+          to: "[name]." + buildType + ".[ext]",
+          from: "manifest*.xml",
+          transform(content) {
+            if (dev) {
+              return content;
+            } else {
+              return content.toString().replace(new RegExp(urlDev, "g"), urlProd);
+            }
+          }
+        }
+      ]}),
     ],
     devServer: {
       headers: {

@@ -41,6 +41,8 @@ function refresh() {
             let syllables = syllableList.reduce((a,b) => a + b, 0);
             let hardWords = (syllableList.filter(x => x > 2).length / words.length) * 100;
 
+            hardWords = Math.min(Math.max(hardWords, 0), 1);
+
             let sentences = body.text.match(/\w[.?!](\s|$|”)/g);
 
             let ari = 4.71 * (characters / words.length) + 0.5 * (words.length / sentences.length) - 21.43;

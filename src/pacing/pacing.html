@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Final Year Project</title>
+
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+
+    <!-- For more information on Office UI Fabric, visit https://developer.microsoft.com/fabric. -->
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/9.6.1/css/fabric.min.css"/>
+
+    <!-- Template styles -->
+    <link href="pacing.css" rel="stylesheet" type="text/css" />
+    
+</head>
+
+<body class="ms-fontSize-28 ms-font-m ms-welcome ms-Fabric">
+    <header class="ms-welcome__header ms-bgColor-neutralLighter ms-font-su">
+        Pacing
+    </header>
+    <section id="sideload-msg" class="ms-welcome__main">
+        <h2 class="ms-font-xl">Please sideload your add-in to see app body.</h2>
+    </section>
+    <main id="app-body" class="ms-welcome__main" style="display: none;">
+        <button class="button" id="insert-paragraph">Refresh</button><br/><br/>
+
+        <table style="width: 100%">
+            <tr>
+                <td>Paragraphs:</td>
+                <td><span id="paragraph-count"></span></td>
+            </tr>
+        </table>
+
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="readability" checked>
+            <label class="form-check-label" for="readability">
+              Readability
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="words" checked>
+            <label class="form-check-label" for="words">
+              Words
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="average" checked>
+            <label class="form-check-label" for="average">
+              Average
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="z-scores">
+            <label class="form-check-label" for="z-scores">
+              Z Scores
+            </label>
+          </div>
+
+        <input type="range" min="0" max="500" class="slider" id="detail">
+        <p id="detail_label"></p>
+
+        <!-- Create a div where the graph will take place -->
+        <div id="pacing_vis"></div>
+    </main>
+</body>
+
+</html>

@@ -4,7 +4,7 @@
   <Version>1.0.0.0</Version>
   <ProviderName>Contoso</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="final_year_project"/>
+  <DisplayName DefaultValue="Final Year Project"/>
   <Description DefaultValue="A template to get started."/>
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-64.png"/>
@@ -54,6 +54,22 @@
                     <SourceLocation resid="Taskpane.Url"/>
                   </Action>
                 </Control>
+                <Control xsi:type="Button" id="PacingButton">
+                  <Label resid="PacingButton.Label"/>
+                  <Supertip>
+                    <Title resid="PacingButton.Label"/>
+                    <Description resid="PacingButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Pacing.Url"/>
+                  </Action>
+                </Control>
               </Group>
             </OfficeTab>
           </ExtensionPoint>
@@ -70,15 +86,18 @@
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812"/>
         <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands.html"/>
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html"/>
+        <bt:Url id="Pacing.Url" DefaultValue="https://localhost:3000/pacing.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Get started with the as-of-yet-unnamed writing tool!"/>
         <bt:String id="CommandsGroup.Label" DefaultValue="Final Year Project"/>
         <bt:String id="TaskpaneButton.Label" DefaultValue="Basic Metrics"/>
+        <bt:String id="PacingButton.Label" DefaultValue="Pacing"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Thanks for using the as-of-yet-unnamed writing tool! Go to the HOME tab and click the 'Basic Metrics' button to get started."/>
         <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Show basic metrics such as word counts and readability scores."/>
+        <bt:String id="PacingButton.Tooltip" DefaultValue="Show pacing information."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
