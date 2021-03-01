@@ -197,7 +197,7 @@ var wordLine = d3.line()
   var zLine = d3.line()
   .x(function(d) { return xZScale(d.y); }) // set the x values for the line generator
   .y(function(d, i) { return yScale(i); }) // set the y values for the line generator 
-  .curve(d3.curveMonotoneX)
+  .curve(d3.curveBasis)
   .defined(d => d.y != undefined); // apply smoothing to the line
 
 

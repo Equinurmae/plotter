@@ -10,59 +10,75 @@
     <!-- Office JavaScript API -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
 
-    <!-- For more information on Office UI Fabric, visit https://developer.microsoft.com/fabric. -->
-    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/9.6.1/css/fabric.min.css"/>
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
+    <script src="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/js/fabric.min.js"></script>
+
 
     <!-- Template styles -->
     <link href="taskpane.css" rel="stylesheet" type="text/css" />
 </head>
 
 <body class="ms-font-m ms-welcome ms-Fabric">
-    <header class="ms-welcome__header ms-bgColor-neutralLighter">
-        <!-- <img width="90" height="90" src="../../assets/logo-filled.png" alt="Contoso" title="Contoso" />
-        <h1 class="ms-font-su">As-of-yet-unnamed Writing App</h1> -->
-        <h1>As Of Yet Unnamed Writing Tool</h1>
+    <header class="ms-welcome__header ms-bgColor-neutralLighter ms-font-su">
+        Basic Metrics
     </header>
     <section id="sideload-msg" class="ms-welcome__main">
         <h2 class="ms-font-xl">Please sideload your add-in to see app body.</h2>
     </section>
     <main id="app-body" class="ms-welcome__main" style="display: none;">
-        <button class="ms-Button" id="insert-paragraph">Refresh</button><br/><br/>
 
-        <table style="width: 100%">
+        <button class="ms-Button ms-Button--primary" id="insert-paragraph">
+            <span class="ms-Button-label">Refresh</span> 
+          </button><br><br>
+
+        <table class="ms-Table" style="width: 100%">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
             <tr>
-                <td>Characters:</td>
+                <td>Characters</td>
                 <td><span id="character-count"></span></td>
             </tr>
             <tr>
-                <td>Words:</td>
+                <td>Words</td>
                 <td><span id="word-count"></span></td>
             </tr>
             <tr>
-                <td>Sentences:</td>
+                <td>Sentences</td>
                 <td><span id="sentence-count"></span></td>
             </tr>
             <tr>
-                <td>Paragraphs:</td>
+                <td>Paragraphs</td>
                 <td><span id="paragraph-count"></span></td>
             </tr>
         </table>
 
-        <h2>Readability</h2>
+        <h2 class="ms-font-xl">Readability</h2>
 
-        <table style="width: 100%">
+        <table class="ms-Table" style="width: 100%">
+            <thead>
+                <tr>
+                    <th>Algorithm</th>
+                    <th>Score</th>
+                    <th>Age Range</th>
+                </tr>
+            </thead>
             <tr>
-                <td>ARI:</td>
+                <td>ARI</td>
                 <td><span id="ari"></span></td>
                 <td><span id="ari-grade"></span></td>
             </tr>
             <tr>
-                <td>Flesch-Kincaid:</td>
+                <td>Flesch-Kincaid</td>
                 <td><span id="fkr"></span></td>
                 <td><span id="fkr-grade"></span></td>
             </tr>
             <tr>
-                <td>Gunning Fog:</td>
+                <td>Gunning Fog</td>
                 <td><span id="gunning"></span></td>
                 <td><span id="gunning-grade"></span></td>
             </tr>
