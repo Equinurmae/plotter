@@ -52,7 +52,7 @@ function refresh() {
 
       return context.sync()
         .then(function() {
-          var words = getWordCount(body.text);
+          var words = nlp.tokenize(body.text).wordCount();
           document.getElementById("word-count").innerHTML = words.toLocaleString();
           displayStructure(words);
         })
@@ -64,10 +64,6 @@ function refresh() {
           console.log("Debug info: " + JSON.stringify(error.debugInfo));
       }
   });
-}
-
-function getWordCount(text) {
-  return nlp(text).wordCount();
 }
 
 function three_act(words, target) {

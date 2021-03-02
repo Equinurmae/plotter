@@ -27,6 +27,23 @@ Office.onReady(info => {
   }
 });
 
+const worker = new Worker("worker.js");
+
+worker.addEventListener('message', function(e) {
+  document.getElementById("character-count").innerHTML = 0;
+  // document.getElementById("word-count").innerHTML = e.words;
+  // document.getElementById("sentence-count").innerHTML = e.sentences;
+  // document.getElementById("paragraph-count").innerHTML = e.paragraphs;
+
+  // document.getElementById("ari").innerHTML = e.ari.toFixed(2);
+  // document.getElementById("fkr").innerHTML = e.fkr.toFixed(2);
+  // document.getElementById("gunning").innerHTML = e.gunning.toFixed(2);
+
+  // document.getElementById("ari-grade").innerHTML = gradeToAge(Math.round(e.ari));
+  // document.getElementById("fkr-grade").innerHTML = gradeToAge(Math.round(e.fkr));
+  // document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(e.gunning));
+});
+
 function loading() {
   document.getElementById("character-count").innerHTML = `<div class="ms-Spinner"></div>`;
   document.getElementById("word-count").innerHTML = `<div class="ms-Spinner"></div>`;
@@ -48,49 +65,21 @@ function loading() {
 }
 
 function refresh() {
+  loading();
+
   Word.run(function (context) {
-    loading();
+    let paragraphs = context.document.body.paragraphs;
+    paragraphs.load("text");
 
-      let paragraphs = context.document.body.paragraphs;
-      paragraphs.load("text");
+    let body = context.document.body;
+    body.load("text");
 
-      let body = context.document.body;
-      body.load("text");
-
-      return context.sync()
-        .then(function() {
-          let doc = nlp(body.text);
-
-          let words = doc.wordCount();
-
-          let characters = doc.termList().map(x => x.text).reduce((a,b) => a + b, "").length;
-
-          let syllableList = doc.terms().syllables();
-          let syllables = syllableList.flatMap(x => x.syllables).length;
-          let hardWords = (syllableList.map(x => x.syllables).filter(x => x.length > 2).length / words) * 100;
-
-          hardWords = Math.min(Math.max(hardWords, 0), 1);
-
-          let sentences = doc.sentences().length;
-
-          let ari = 4.71 * (characters / words) + 0.5 * (words / sentences) - 21.43;
-          let fkr = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59;
-          let gunning = 0.4 * ((words / sentences) + hardWords);
-
-          document.getElementById("character-count").innerHTML = characters.toLocaleString();
-          document.getElementById("word-count").innerHTML = words.toLocaleString();
-          document.getElementById("sentence-count").innerHTML = sentences.toLocaleString();
-          document.getElementById("paragraph-count").innerHTML = paragraphs.items.length.toLocaleString();
-
-          document.getElementById("ari").innerHTML = ari.toFixed(2);
-          document.getElementById("fkr").innerHTML = fkr.toFixed(2);
-          document.getElementById("gunning").innerHTML = gunning.toFixed(2);
-
-          document.getElementById("ari-grade").innerHTML = gradeToAge(Math.round(ari));
-          document.getElementById("fkr-grade").innerHTML = gradeToAge(Math.round(fkr));
-          document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(gunning));
-        })
-        .then(context.sync);
+    return context.sync()
+      .then(function() {
+        // worker.postMessage({"text": body.text, "paragraphs": paragraphs});
+        worker.postMessage("TEST");
+      })
+      .then(context.sync);
   })
   .catch(function (error) {
       console.log("Error: " + error);
@@ -99,19 +88,6 @@ function refresh() {
       }
   });
 }
-
-function findSyllables(word) {
-    word = word.toLowerCase();                                     
-    word = word.replace(/(?:[^laeiouy]|ed|[^laeiouy]e)$/, '');   
-    word = word.replace(/^y/, '');                                 
-    //return word.match(/[aeiouy]{1,2}/g).length;   
-    var syl = word.match(/[aeiouy]{1,2}/g);
-    if(syl)
-    {
-        return syl.length;
-    }
-    else return 1;
-  }
 
 function gradeToAge(grade) {
     switch(grade) {

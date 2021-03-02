@@ -4,7 +4,7 @@
   <Version>1.0.0.0</Version>
   <ProviderName>Contoso</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Final Year Project"/>
+  <DisplayName DefaultValue="Plotter"/>
   <Description DefaultValue="A template to get started."/>
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-64.png"/>
@@ -106,17 +106,17 @@
         <bt:Url id="Structure.Url" DefaultValue="https://localhost:3000/structure.html"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Get started with the as-of-yet-unnamed writing tool!"/>
-        <bt:String id="CommandsGroup.Label" DefaultValue="Final Year Project"/>
+        <bt:String id="GetStarted.Title" DefaultValue="Get started with Plotter!"/>
+        <bt:String id="CommandsGroup.Label" DefaultValue="Plotter"/>
         <bt:String id="TaskpaneButton.Label" DefaultValue="Basic Metrics"/>
         <bt:String id="PacingButton.Label" DefaultValue="Pacing"/>
         <bt:String id="StructureButton.Label" DefaultValue="Structure"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Thanks for using the as-of-yet-unnamed writing tool! Go to the HOME tab and click the 'Basic Metrics' button to get started."/>
+        <bt:String id="GetStarted.Description" DefaultValue="Thanks for using Plotter! Go to the HOME tab and click the 'Basic Metrics' button to get started."/>
         <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Show basic metrics such as word counts and readability scores."/>
         <bt:String id="PacingButton.Tooltip" DefaultValue="Show pacing information."/>
-        <bt:String id="StructureButton.Tooltip" DefaultValue="Show structure information."/>
+        <bt:String id="StructureButton.Tooltip" DefaultValue="Show structure tracking information."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
