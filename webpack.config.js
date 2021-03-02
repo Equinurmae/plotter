@@ -17,7 +17,8 @@ module.exports = async (env, options) => {
       polyfill: "@babel/polyfill",
       taskpane: "./src/taskpane/taskpane.js",
       commands: "./src/commands/commands.js",
-      pacing: "./src/pacing/pacing.js"
+      pacing: "./src/pacing/pacing.js",
+      structure: "./src/structure/structure.js"
     },
     resolve: {
       extensions: [".ts", ".tsx", ".html", ".js"]
@@ -88,6 +89,29 @@ module.exports = async (env, options) => {
         {
           to: "pacing.css",
           from: "./src/pacing/pacing.css"
+        },
+        {
+          to: "[name]." + buildType + ".[ext]",
+          from: "manifest*.xml",
+          transform(content) {
+            if (dev) {
+              return content;
+            } else {
+              return content.toString().replace(new RegExp(urlDev, "g"), urlProd);
+            }
+          }
+        }
+      ]}),
+      new HtmlWebpackPlugin({
+        filename: "structure.html",
+        template: "./src/structure/structure.html",
+        chunks: ["polyfill", "structure"]
+      }),
+      new CopyWebpackPlugin({
+        patterns: [
+        {
+          to: "structure.css",
+          from: "./src/structure/structure.css"
         },
         {
           to: "[name]." + buildType + ".[ext]",

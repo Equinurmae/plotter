@@ -28,6 +28,10 @@
   },
   "dependencies": {
     "bootstrap": "^4.6.0",
+    "compromise": "^13.10.0",
+    "compromise-adjectives": "0.0.7",
+    "compromise-sentences": "^0.2.0",
+    "compromise-syllables": "0.0.6",
     "d3": "^6.5.0",
     "jquery": "^3.5.1",
     "moving-averages": "^4.0.5",

@@ -41,19 +41,19 @@
             </thead>
             <tr>
                 <td>Characters</td>
-                <td><span id="character-count"></span></td>
+                <td id="character-count"><div class="ms-Spinner"></div></td>
             </tr>
             <tr>
                 <td>Words</td>
-                <td><span id="word-count"></span></td>
+                <td id="word-count"><div class="ms-Spinner"></div></td>
             </tr>
             <tr>
                 <td>Sentences</td>
-                <td><span id="sentence-count"></span></td>
+                <td id="sentence-count"><div class="ms-Spinner"></div></td>
             </tr>
             <tr>
                 <td>Paragraphs</td>
-                <td><span id="paragraph-count"></span></td>
+                <td id="paragraph-count"><div class="ms-Spinner"></div></td>
             </tr>
         </table>
 
@@ -69,21 +69,28 @@
             </thead>
             <tr>
                 <td>ARI</td>
-                <td><span id="ari"></span></td>
-                <td><span id="ari-grade"></span></td>
+                <td id="ari"><div class="ms-Spinner"></div></td>
+                <td id="ari-grade"><div class="ms-Spinner"></div></td>
             </tr>
             <tr>
                 <td>Flesch-Kincaid</td>
-                <td><span id="fkr"></span></td>
-                <td><span id="fkr-grade"></span></td>
+                <td id="fkr"><div class="ms-Spinner"></div></td>
+                <td id="fkr-grade"><div class="ms-Spinner"></div></td>
             </tr>
             <tr>
                 <td>Gunning Fog</td>
-                <td><span id="gunning"></span></td>
-                <td><span id="gunning-grade"></span></td>
+                <td id="gunning"><div class="ms-Spinner"></div></td>
+                <td id="gunning-grade"><div class="ms-Spinner"></div></td>
             </tr>
         </table>
     </main>
+
+    <script>
+        var SpinnerElements = document.querySelectorAll(".ms-Spinner");
+        for (var i = 0; i < SpinnerElements.length; i++) {
+          new fabric['Spinner'](SpinnerElements[i]);
+        }
+      </script>
 </body>
 
 </html>

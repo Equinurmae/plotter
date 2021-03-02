@@ -2,6 +2,11 @@
 import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
+import nlp from "compromise";
+import syllables from "compromise-syllables";
+import sentences from "compromise-sentences"
+nlp.extend(syllables);
+nlp.extend(sentences);
 
 /* global document, Office, Word */
 
@@ -22,8 +27,30 @@ Office.onReady(info => {
   }
 });
 
+function loading() {
+  document.getElementById("character-count").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("word-count").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("sentence-count").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("paragraph-count").innerHTML = `<div class="ms-Spinner"></div>`;
+
+  document.getElementById("ari").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("fkr").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("gunning").innerHTML = `<div class="ms-Spinner"></div>`;
+
+  document.getElementById("ari-grade").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("fkr-grade").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("gunning-grade").innerHTML = `<div class="ms-Spinner"></div>`;
+
+  var SpinnerElements = document.querySelectorAll(".ms-Spinner");
+  for (var i = 0; i < SpinnerElements.length; i++) {
+    new fabric['Spinner'](SpinnerElements[i]);
+  }
+}
+
 function refresh() {
   Word.run(function (context) {
+    loading();
+
       let paragraphs = context.document.body.paragraphs;
       paragraphs.load("text");
 
@@ -32,35 +59,36 @@ function refresh() {
 
       return context.sync()
         .then(function() {
-            let strip_punctuation = body.text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()"?“”]/g," ");
-            let words = strip_punctuation.trim().split(/\s+/g);
+          let doc = nlp(body.text);
 
-            let characters = words.map(word => word.length).reduce((a,b) => a + b, 0);
+          let words = doc.wordCount();
 
-            let syllableList = words.map(word => findSyllables(word));
-            let syllables = syllableList.reduce((a,b) => a + b, 0);
-            let hardWords = (syllableList.filter(x => x > 2).length / words.length) * 100;
+          let characters = doc.termList().map(x => x.text).reduce((a,b) => a + b, "").length;
 
-            hardWords = Math.min(Math.max(hardWords, 0), 1);
+          let syllableList = doc.terms().syllables();
+          let syllables = syllableList.flatMap(x => x.syllables).length;
+          let hardWords = (syllableList.map(x => x.syllables).filter(x => x.length > 2).length / words) * 100;
 
-            let sentences = body.text.match(/\w[.?!](\s|$|”)/g);
+          hardWords = Math.min(Math.max(hardWords, 0), 1);
 
-            let ari = 4.71 * (characters / words.length) + 0.5 * (words.length / sentences.length) - 21.43;
-            let fkr = 0.39 * (words.length / sentences.length) + 11.8 * (syllables / words.length) - 15.59;
-            let gunning = 0.4 * ((words.length / sentences.length) + hardWords);
+          let sentences = doc.sentences().length;
 
-            document.getElementById("character-count").innerHTML = characters.toLocaleString();
-            document.getElementById("word-count").innerHTML = words.length.toLocaleString();
-            document.getElementById("sentence-count").innerHTML = sentences.length.toLocaleString();
-            document.getElementById("paragraph-count").innerHTML = paragraphs.items.length.toLocaleString();
+          let ari = 4.71 * (characters / words) + 0.5 * (words / sentences) - 21.43;
+          let fkr = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59;
+          let gunning = 0.4 * ((words / sentences) + hardWords);
 
-            document.getElementById("ari").innerHTML = ari.toFixed(2);
-            document.getElementById("fkr").innerHTML = fkr.toFixed(2);
-            document.getElementById("gunning").innerHTML = gunning.toFixed(2);
+          document.getElementById("character-count").innerHTML = characters.toLocaleString();
+          document.getElementById("word-count").innerHTML = words.toLocaleString();
+          document.getElementById("sentence-count").innerHTML = sentences.toLocaleString();
+          document.getElementById("paragraph-count").innerHTML = paragraphs.items.length.toLocaleString();
 
-            document.getElementById("ari-grade").innerHTML = gradeToAge(Math.round(ari));
-            document.getElementById("fkr-grade").innerHTML = gradeToAge(Math.round(fkr));
-            document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(gunning));
+          document.getElementById("ari").innerHTML = ari.toFixed(2);
+          document.getElementById("fkr").innerHTML = fkr.toFixed(2);
+          document.getElementById("gunning").innerHTML = gunning.toFixed(2);
+
+          document.getElementById("ari-grade").innerHTML = gradeToAge(Math.round(ari));
+          document.getElementById("fkr-grade").innerHTML = gradeToAge(Math.round(fkr));
+          document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(gunning));
         })
         .then(context.sync);
   })

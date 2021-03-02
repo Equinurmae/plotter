@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Final Year Project</title>
+
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
+    <script src="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/js/fabric.min.js"></script>
+
+    <script type="text/javascript">
+      var ToggleElements = document.querySelectorAll(".ms-Toggle");
+      for (var i = 0; i < ToggleElements.length; i++) {
+        new fabric['Toggle'](ToggleElements[i]);
+      }
+    </script>
+
+    <!-- Template styles -->
+    <link href="structure.css" rel="stylesheet" type="text/css" />
+    
+</head>
+
+<body class="ms-fontSize-28 ms-font-m ms-welcome ms-Fabric">
+    <header class="ms-welcome__header ms-bgColor-neutralLighter ms-font-su">
+        Structure
+    </header>
+    <section id="sideload-msg" class="ms-welcome__main">
+        <h2 class="ms-font-xl">Please sideload your add-in to see app body.</h2>
+    </section>
+    <main id="app-body" class="ms-welcome__main" style="display: none;">
+      <p id="debug"></p>
+
+      <button class="ms-Button ms-Button--primary" id="insert-paragraph">
+        <span class="ms-Button-label">Refresh</span> 
+      </button><br><br>
+
+      <table class="ms-Table" style="width: 100%">
+          <tr>
+              <td>Words</td>
+              <td><span id="word-count"></span></td>
+          </tr>
+      </table><br><br>
+
+      <div class="ms-TextField ms-TextField--underlined">
+        <label class="ms-Label">Target Words</label>
+        <input id="target" class="ms-TextField-field" type="text" value="" placeholder="100000">
+      </div><br><br>
+
+      <div class="ms-Dropdown" tabindex="0">
+        <label class="ms-Label">Story Structure</label>
+        <i class="ms-Dropdown-caretDown ms-Icon ms-Icon--ChevronDown"></i>
+        <select class="ms-Dropdown-select" id="structure">
+          <option value="three-act">Three-act Structure</option>
+          <option value="four-act">Four-act Structure</option>
+          <option value="save-the-cat">Save the Cat</option>
+        </select>
+      </div>
+
+      <div class="ms-fontSize-28" id="structure-table">
+      </div>
+        
+    </main>
+
+    <script type="text/javascript">
+      var DropdownHTMLElements = document.querySelectorAll('.ms-Dropdown');
+      for (var i = 0; i < DropdownHTMLElements.length; ++i) {
+        var Dropdown = new fabric['Dropdown'](DropdownHTMLElements[i]);
+      }
+    </script>
+
+</body>
+
+</html>

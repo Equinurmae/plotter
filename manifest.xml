@@ -70,6 +70,22 @@
                     <SourceLocation resid="Pacing.Url"/>
                   </Action>
                 </Control>
+                <Control xsi:type="Button" id="StructureButton">
+                  <Label resid="StructureButton.Label"/>
+                  <Supertip>
+                    <Title resid="StructureButton.Label"/>
+                    <Description resid="StructureButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Structure.Url"/>
+                  </Action>
+                </Control>
               </Group>
             </OfficeTab>
           </ExtensionPoint>
@@ -87,17 +103,20 @@
         <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands.html"/>
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html"/>
         <bt:Url id="Pacing.Url" DefaultValue="https://localhost:3000/pacing.html"/>
+        <bt:Url id="Structure.Url" DefaultValue="https://localhost:3000/structure.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Get started with the as-of-yet-unnamed writing tool!"/>
         <bt:String id="CommandsGroup.Label" DefaultValue="Final Year Project"/>
         <bt:String id="TaskpaneButton.Label" DefaultValue="Basic Metrics"/>
         <bt:String id="PacingButton.Label" DefaultValue="Pacing"/>
+        <bt:String id="StructureButton.Label" DefaultValue="Structure"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Thanks for using the as-of-yet-unnamed writing tool! Go to the HOME tab and click the 'Basic Metrics' button to get started."/>
         <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Show basic metrics such as word counts and readability scores."/>
         <bt:String id="PacingButton.Tooltip" DefaultValue="Show pacing information."/>
+        <bt:String id="StructureButton.Tooltip" DefaultValue="Show structure information."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
