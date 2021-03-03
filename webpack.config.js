@@ -114,6 +114,10 @@ module.exports = async (env, options) => {
           from: "./src/structure/structure.css"
         },
         {
+          to: "worker.js",
+          from: "./src/structure/worker.js"
+        },
+        {
           to: "[name]." + buildType + ".[ext]",
           from: "manifest*.xml",
           transform(content) {

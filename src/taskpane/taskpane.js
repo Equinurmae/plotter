@@ -17,6 +17,23 @@ Office.onReady(info => {
       console.log('Sorry. The tutorial add-in uses Word.js APIs that are not available in your version of Office.');
     }
 
+    const worker = new Worker("worker.js");
+
+    worker.addEventListener('message', function(e) {
+      document.getElementById("character-count").innerHTML = e.characters;
+      document.getElementById("word-count").innerHTML = e.words;
+      document.getElementById("sentence-count").innerHTML = e.sentences;
+      document.getElementById("paragraph-count").innerHTML = e.paragraphs;
+
+      document.getElementById("ari").innerHTML = e.ari.toFixed(2);
+      document.getElementById("fkr").innerHTML = e.fkr.toFixed(2);
+      document.getElementById("gunning").innerHTML = e.gunning.toFixed(2);
+
+      document.getElementById("ari-grade").innerHTML = gradeToAge(Math.round(e.ari));
+      document.getElementById("fkr-grade").innerHTML = gradeToAge(Math.round(e.fkr));
+      document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(e.gunning));
+    });
+
     // Assign event handlers and other initialization logic.
     document.getElementById("insert-paragraph").onclick = refresh;
 
@@ -25,23 +42,6 @@ Office.onReady(info => {
     document.getElementById("sideload-msg").style.display = "none";
     document.getElementById("app-body").style.display = "flex";
   }
-});
-
-const worker = new Worker("worker.js");
-
-worker.addEventListener('message', function(e) {
-  document.getElementById("character-count").innerHTML = 0;
-  // document.getElementById("word-count").innerHTML = e.words;
-  // document.getElementById("sentence-count").innerHTML = e.sentences;
-  // document.getElementById("paragraph-count").innerHTML = e.paragraphs;
-
-  // document.getElementById("ari").innerHTML = e.ari.toFixed(2);
-  // document.getElementById("fkr").innerHTML = e.fkr.toFixed(2);
-  // document.getElementById("gunning").innerHTML = e.gunning.toFixed(2);
-
-  // document.getElementById("ari-grade").innerHTML = gradeToAge(Math.round(e.ari));
-  // document.getElementById("fkr-grade").innerHTML = gradeToAge(Math.round(e.fkr));
-  // document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(e.gunning));
 });
 
 function loading() {

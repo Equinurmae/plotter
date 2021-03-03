@@ -9,6 +9,12 @@ let target = 100000;
 
 /* global document, Office, Word */
 
+const worker = new Worker("worker.js");
+
+worker.onmessage = function(e) {
+  document.getElementById("debug").innerHTML = e.message;
+};
+
 Office.onReady(info => {
   if (info.host === Office.HostType.Word) {
     // Determine if the user's version of Office supports all the Office.js APIs that are used in the tutorial.
@@ -44,6 +50,7 @@ function loading() {
 }
 
 function refresh() {
+  worker.postMessage("Hello world!");
   loading();
 
   Word.run(function (context) {
