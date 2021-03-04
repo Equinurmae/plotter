@@ -9,10 +9,13 @@ let target = 100000;
 
 /* global document, Office, Word */
 
-const worker = new Worker("worker.js");
+const worker = new Worker("structure_worker.js");
 
 worker.onmessage = function(e) {
-  document.getElementById("debug").innerHTML = e.message;
+  document.getElementById("debug").innerHTML = "Message received.";
+  var words = e.data.words;
+  document.getElementById("word-count").innerHTML = words.toLocaleString();
+  displayStructure(words);
 };
 
 Office.onReady(info => {
@@ -59,9 +62,8 @@ function refresh() {
 
       return context.sync()
         .then(function() {
-          var words = nlp.tokenize(body.text).wordCount();
-          document.getElementById("word-count").innerHTML = words.toLocaleString();
-          displayStructure(words);
+          worker.postMessage({"text": body.text});
+          document.getElementById("debug").innerHTML = "Message sent.";
         })
         .then(context.sync);
   })

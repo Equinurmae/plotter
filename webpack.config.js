@@ -63,6 +63,10 @@ module.exports = async (env, options) => {
           from: "./src/taskpane/taskpane.css"
         },
         {
+          to: "metrics_worker.js",
+          from: "./src/taskpane/metrics_worker.js"
+        },
+        {
           to: "[name]." + buildType + ".[ext]",
           from: "manifest*.xml",
           transform(content) {
@@ -91,6 +95,10 @@ module.exports = async (env, options) => {
           from: "./src/pacing/pacing.css"
         },
         {
+          to: "pacing_worker.js",
+          from: "./src/pacing/pacing_worker.js"
+        },
+        {
           to: "[name]." + buildType + ".[ext]",
           from: "manifest*.xml",
           transform(content) {
@@ -114,8 +122,8 @@ module.exports = async (env, options) => {
           from: "./src/structure/structure.css"
         },
         {
-          to: "worker.js",
-          from: "./src/structure/worker.js"
+          to: "structure_worker.js",
+          from: "./src/structure/structure_worker.js"
         },
         {
           to: "[name]." + buildType + ".[ext]",

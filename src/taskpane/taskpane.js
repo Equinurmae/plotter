@@ -10,29 +10,30 @@ nlp.extend(sentences);
 
 /* global document, Office, Word */
 
+const worker = new Worker("metrics_worker.js");
+
+worker.onmessage = function(e) {
+  document.getElementById("debug").innerHTML = "Message received.";
+
+  document.getElementById("character-count").innerHTML = e.data.characters;
+  document.getElementById("word-count").innerHTML = e.data.words;
+  document.getElementById("sentence-count").innerHTML = e.data.sentences;
+
+  document.getElementById("ari").innerHTML = e.data.ari.toFixed(2);
+  document.getElementById("fkr").innerHTML = e.data.fkr.toFixed(2);
+  document.getElementById("gunning").innerHTML = e.data.gunning.toFixed(2);
+
+  document.getElementById("ari-grade").innerHTML = gradeToAge(Math.round(e.data.ari));
+  document.getElementById("fkr-grade").innerHTML = gradeToAge(Math.round(e.data.fkr));
+  document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(e.data.gunning));
+};
+
 Office.onReady(info => {
   if (info.host === Office.HostType.Word) {
     // Determine if the user's version of Office supports all the Office.js APIs that are used in the tutorial.
     if (!Office.context.requirements.isSetSupported('WordApi', '1.3')) {
       console.log('Sorry. The tutorial add-in uses Word.js APIs that are not available in your version of Office.');
     }
-
-    const worker = new Worker("worker.js");
-
-    worker.addEventListener('message', function(e) {
-      document.getElementById("character-count").innerHTML = e.characters;
-      document.getElementById("word-count").innerHTML = e.words;
-      document.getElementById("sentence-count").innerHTML = e.sentences;
-      document.getElementById("paragraph-count").innerHTML = e.paragraphs;
-
-      document.getElementById("ari").innerHTML = e.ari.toFixed(2);
-      document.getElementById("fkr").innerHTML = e.fkr.toFixed(2);
-      document.getElementById("gunning").innerHTML = e.gunning.toFixed(2);
-
-      document.getElementById("ari-grade").innerHTML = gradeToAge(Math.round(e.ari));
-      document.getElementById("fkr-grade").innerHTML = gradeToAge(Math.round(e.fkr));
-      document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(e.gunning));
-    });
 
     // Assign event handlers and other initialization logic.
     document.getElementById("insert-paragraph").onclick = refresh;
@@ -76,8 +77,10 @@ function refresh() {
 
     return context.sync()
       .then(function() {
-        // worker.postMessage({"text": body.text, "paragraphs": paragraphs});
-        worker.postMessage("TEST");
+        document.getElementById("debug").innerHTML = "Message sending...";
+        worker.postMessage({"text": body.text});
+        document.getElementById("debug").innerHTML = "Message sent.";
+        document.getElementById("paragraph-count").innerHTML = paragraphs.items.length.toLocaleString();
       })
       .then(context.sync);
   })
