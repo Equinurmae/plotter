@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Plotter</title>
+
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.min.css" />
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/css/fabric.components.min.css" />
+    <script src="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-js/1.4.0/js/fabric.min.js"></script>
+
+    <!-- Template styles -->
+    <link href="pos.css" rel="stylesheet" type="text/css" />
+    
+</head>
+
+<body class="ms-fontSize-28 ms-font-m ms-welcome ms-Fabric">
+    <header class="ms-welcome__header ms-bgColor-neutralLighter ms-font-su">
+        Parts of Speech
+    </header>
+    <section id="sideload-msg" class="ms-welcome__main">
+        <h2 class="ms-font-xl">Please sideload your add-in to see app body.</h2>
+    </section>
+    <main id="app-body" class="ms-welcome__main" style="display: none;">
+      <button class="ms-Button ms-Button--primary" id="refresh">
+        <span class="ms-Button-label">Refresh</span> 
+      </button><br><br>
+
+      <p>Select a piece of text and we'll count the parts of speech in it!</p>
+
+      <div class="ms-MessageBar ms-MessageBar--success">
+        <div class="ms-MessageBar-content">
+          <div class="ms-MessageBar-icon">
+            <i class="ms-Icon ms-Icon--Completed"></i>
+          </div>
+          <div class="ms-MessageBar-text">
+            <span style="font-weight: 700">92% Active</span> | 8% Passive
+          </div>
+        </div>
+      </div>
+
+        <!-- Create a div where the graph will take place -->
+        <div id="pos_vis"></div>
+
+      <div class="ms-MessageBar ms-MessageBar--success" style="width: 100%">
+        <div class="ms-MessageBar-content">
+          <div class="ms-MessageBar-icon">
+            <i class="ms-Icon ms-Icon--Completed"></i>
+          </div>
+          <div class="ms-MessageBar-text">
+            That's a nice ratio of <span style="font-weight: 700">adverbs</span> you've got there!
+          </div>
+        </div>
+      </div>
+
+      <div class="ms-MessageBar ms-MessageBar--success" style="width: 100%">
+        <div class="ms-MessageBar-content">
+          <div class="ms-MessageBar-icon">
+            <i class="ms-Icon ms-Icon--Completed"></i>
+          </div>
+          <div class="ms-MessageBar-text">
+            That's a nice ratio of <span style="font-weight: 700">adjectives</span> you've got there!
+          </div>
+        </div>
+      </div>
+
+      <div class="ms-MessageBar ms-MessageBar--warning" style="width: 100%">
+        <div class="ms-MessageBar-content">
+          <div class="ms-MessageBar-icon">
+            <i class="ms-Icon ms-Icon--Info"></i>
+          </div>
+          <div class="ms-MessageBar-text">
+            Woah! That's a lot of <span style="font-weight: 700">pronouns</span> there!
+          </div>
+        </div>
+      </div>
+    </main>
+
+</body>
+
+</html>

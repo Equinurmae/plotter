@@ -136,7 +136,7 @@ function z(point, mean, deviation) {
 }
 
 function draw_chart(paragraphs) {
-  var margin = {top: 50, right: 50, bottom: 50, left: 60}
+  var margin = {top: 50, right: 50, bottom: 50, left: 50}
   , width = window.innerWidth - margin.left - margin.right // Use the window's width 
   , height = window.innerHeight - margin.top - margin.bottom; // Use the window's height
 
@@ -160,10 +160,6 @@ function draw_chart(paragraphs) {
 var xScale = d3.scaleLinear()
     .domain([0, d3.max(data)]) // input
     .range([0, width]); // output
-
-var axisScale = d3.scaleOrdinal()
-  .domain(["fast", "average", "slow"])
-  .range([0, width/2, width]);;
 
     // 5. X scale will use the index of our data
 var xWordScale = d3.scaleLinear()
@@ -224,6 +220,12 @@ var svg = d3.select("#pacing_vis").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+// 3. Call the x axis in a group tag
+// svg.append("g")
+//     .attr("class", "x axis")
+//     .attr("transform", "translate(0,0)")
+//     .call(d3.axisTop(xScale)); // Create an axis component with d3.axisBottom
+
 // 4. Call the y axis in a group tag
 svg.append("g")
     .attr("class", "y axis")
@@ -241,7 +243,7 @@ if(options.readability) {
 // 9. Append the path, bind the data, and call the line generator 
 svg.append("path")
     .datum(dataset) // 10. Binds data to the line 
-    .attr("class", "line") // Assign a class for styling
+    .attr("class", "line") // Assign a class for styling 
     .attr("d", line); // 11. Calls the line generator 
 }
 
@@ -252,20 +254,17 @@ if(options["z-scores"]) {
   .attr("d", zLine); // 11. Calls the line generator 
 }
 
-if(options.average) {
-
-
-
+  if(options.average) {
   // 9. Append the path, bind the data, and call the line generator 
   svg.append("path")
   .datum(averageDataset) // 10. Binds data to the line 
   .attr("class", "lineAverage") // Assign a class for styling 
   .attr("d", line); // 11. Calls the line generator 
 
-  // svg.append("path")
-  // .datum(emaDataset) // 10. Binds data to the line 
-  // .attr("class", "ema") // Assign a class for styling 
-  // .attr("d", line); // 11. Calls the line generator 
+  svg.append("path")
+  .datum(emaDataset) // 10. Binds data to the line 
+  .attr("class", "ema") // Assign a class for styling 
+  .attr("d", line); // 11. Calls the line generator 
   }
 
 
@@ -274,28 +273,4 @@ if(options.average) {
 //       .attr("fill", "green")
 //       .attr("stroke", "none")
 //       .attr("d", area);
-
-// 3. Call the x axis in a group tag
-svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0,0)")
-    .call(d3.axisTop(axisScale)); // Create an axis component with d3.axisBottom
-
-    // text label for the x axis
-  svg.append("text")             
-  .attr("transform",
-        "translate(" + (width/2) + " ," + 
-                       (- 30) + ")")
-  .style("text-anchor", "middle")
-  .text("Pacing");
-
-  // text label for the y axis
-  svg.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 0 - margin.left + 10)
-      .attr("x",0 - (height / 2))
-      .attr("dy", "1em")
-      .style("text-anchor", "middle")
-      .text("Paragraph #"); 
-
 }

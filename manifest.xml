@@ -16,7 +16,7 @@
     <Host Name="Document"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://localhost:3000/taskpane.html"/>
+    <SourceLocation DefaultValue="https://localhost:3000/metrics.html"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -34,24 +34,24 @@
               <Group id="CommandsGroup">
                 <Label resid="CommandsGroup.Label"/>
                 <Icon>
-                  <bt:Image size="16" resid="Icon.16x16"/>
-                  <bt:Image size="32" resid="Icon.32x32"/>
-                  <bt:Image size="80" resid="Icon.80x80"/>
+                  <bt:Image size="16" resid="Icon.Plotter.16x16"/>
+                  <bt:Image size="32" resid="Icon.Plotter.32x32"/>
+                  <bt:Image size="80" resid="Icon.Plotter.80x80"/>
                 </Icon>
-                <Control xsi:type="Button" id="TaskpaneButton">
-                  <Label resid="TaskpaneButton.Label"/>
+                <Control xsi:type="Button" id="Metrics">
+                  <Label resid="Metrics.Label"/>
                   <Supertip>
-                    <Title resid="TaskpaneButton.Label"/>
-                    <Description resid="TaskpaneButton.Tooltip"/>
+                    <Title resid="Metrics.Label"/>
+                    <Description resid="Metrics.Tooltip"/>
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Icon.16x16"/>
-                    <bt:Image size="32" resid="Icon.32x32"/>
-                    <bt:Image size="80" resid="Icon.80x80"/>
+                    <bt:Image size="16" resid="Icon.Metrics.16x16"/>
+                    <bt:Image size="32" resid="Icon.Metrics.32x32"/>
+                    <bt:Image size="80" resid="Icon.Metrics.80x80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>ButtonId1</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url"/>
+                    <SourceLocation resid="Metrics.Url"/>
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="PacingButton">
@@ -61,9 +61,9 @@
                     <Description resid="PacingButton.Tooltip"/>
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Icon.16x16"/>
-                    <bt:Image size="32" resid="Icon.32x32"/>
-                    <bt:Image size="80" resid="Icon.80x80"/>
+                    <bt:Image size="16" resid="Icon.Pacing.16x16"/>
+                    <bt:Image size="32" resid="Icon.Pacing.32x32"/>
+                    <bt:Image size="80" resid="Icon.Pacing.80x80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>ButtonId1</TaskpaneId>
@@ -77,13 +77,61 @@
                     <Description resid="StructureButton.Tooltip"/>
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Icon.16x16"/>
-                    <bt:Image size="32" resid="Icon.32x32"/>
-                    <bt:Image size="80" resid="Icon.80x80"/>
+                    <bt:Image size="16" resid="Icon.Structure.16x16"/>
+                    <bt:Image size="32" resid="Icon.Structure.32x32"/>
+                    <bt:Image size="80" resid="Icon.Structure.80x80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>ButtonId1</TaskpaneId>
                     <SourceLocation resid="Structure.Url"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="PoSButton">
+                  <Label resid="PoSButton.Label"/>
+                  <Supertip>
+                    <Title resid="PoSButton.Label"/>
+                    <Description resid="PoSButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.PoS.16x16"/>
+                    <bt:Image size="32" resid="Icon.PoS.32x32"/>
+                    <bt:Image size="80" resid="Icon.PoS.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="PoS.Url"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="PoVButton">
+                  <Label resid="PoVButton.Label"/>
+                  <Supertip>
+                    <Title resid="PoVButton.Label"/>
+                    <Description resid="PoVButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.PoV.16x16"/>
+                    <bt:Image size="32" resid="Icon.PoV.32x32"/>
+                    <bt:Image size="80" resid="Icon.PoV.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="PoV.Url"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="SentimentButton">
+                  <Label resid="SentimentButton.Label"/>
+                  <Supertip>
+                    <Title resid="SentimentButton.Label"/>
+                    <Description resid="SentimentButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Sentiment.16x16"/>
+                    <bt:Image size="32" resid="Icon.Sentiment.32x32"/>
+                    <bt:Image size="80" resid="Icon.Sentiment.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Sentiment.Url"/>
                   </Action>
                 </Control>
               </Group>
@@ -97,26 +145,57 @@
         <bt:Image id="Icon.16x16" DefaultValue="https://localhost:3000/assets/icon-16.png"/>
         <bt:Image id="Icon.32x32" DefaultValue="https://localhost:3000/assets/icon-32.png"/>
         <bt:Image id="Icon.80x80" DefaultValue="https://localhost:3000/assets/icon-80.png"/>
+        <bt:Image id="Icon.Plotter.80x80" DefaultValue="https://localhost:3000/assets/plotter-80.png"/>
+        <bt:Image id="Icon.Plotter.32x32" DefaultValue="https://localhost:3000/assets/plotter-32.png"/>
+        <bt:Image id="Icon.Plotter.16x16" DefaultValue="https://localhost:3000/assets/plotter-16.png"/>
+        <bt:Image id="Icon.Metrics.80x80" DefaultValue="https://localhost:3000/assets/metrics-80.png"/>
+        <bt:Image id="Icon.Metrics.32x32" DefaultValue="https://localhost:3000/assets/metrics-32.png"/>
+        <bt:Image id="Icon.Metrics.16x16" DefaultValue="https://localhost:3000/assets/metrics-16.png"/>
+        <bt:Image id="Icon.Pacing.80x80" DefaultValue="https://localhost:3000/assets/pacing-80.png"/>
+        <bt:Image id="Icon.Pacing.32x32" DefaultValue="https://localhost:3000/assets/pacing-32.png"/>
+        <bt:Image id="Icon.Pacing.16x16" DefaultValue="https://localhost:3000/assets/pacing-16.png"/>
+        <bt:Image id="Icon.Structure.80x80" DefaultValue="https://localhost:3000/assets/structure-80.png"/>
+        <bt:Image id="Icon.Structure.32x32" DefaultValue="https://localhost:3000/assets/structure-32.png"/>
+        <bt:Image id="Icon.Structure.16x16" DefaultValue="https://localhost:3000/assets/structure-16.png"/>
+        <bt:Image id="Icon.PoS.80x80" DefaultValue="https://localhost:3000/assets/pos-80.png"/>
+        <bt:Image id="Icon.PoS.32x32" DefaultValue="https://localhost:3000/assets/pos-32.png"/>
+        <bt:Image id="Icon.PoS.16x16" DefaultValue="https://localhost:3000/assets/pos-16.png"/>
+        <bt:Image id="Icon.PoV.80x80" DefaultValue="https://localhost:3000/assets/pov-80.png"/>
+        <bt:Image id="Icon.PoV.32x32" DefaultValue="https://localhost:3000/assets/pov-32.png"/>
+        <bt:Image id="Icon.PoV.16x16" DefaultValue="https://localhost:3000/assets/pov-16.png"/>
+        <bt:Image id="Icon.Sentiment.80x80" DefaultValue="https://localhost:3000/assets/sentiment-80.png"/>
+        <bt:Image id="Icon.Sentiment.32x32" DefaultValue="https://localhost:3000/assets/sentiment-32.png"/>
+        <bt:Image id="Icon.Sentiment.16x16" DefaultValue="https://localhost:3000/assets/sentiment-16.png"/>
+
       </bt:Images>
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812"/>
         <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html"/>
+        <bt:Url id="Metrics.Url" DefaultValue="https://localhost:3000/metrics.html"/>
         <bt:Url id="Pacing.Url" DefaultValue="https://localhost:3000/pacing.html"/>
         <bt:Url id="Structure.Url" DefaultValue="https://localhost:3000/structure.html"/>
+        <bt:Url id="PoS.Url" DefaultValue="https://localhost:3000/pos.html"/>
+        <bt:Url id="PoV.Url" DefaultValue="https://localhost:3000/pov.html"/>
+        <bt:Url id="Sentiment.Url" DefaultValue="https://localhost:3000/sentiment.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Get started with Plotter!"/>
         <bt:String id="CommandsGroup.Label" DefaultValue="Plotter"/>
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Basic Metrics"/>
+        <bt:String id="Metrics.Label" DefaultValue="Basic Metrics"/>
         <bt:String id="PacingButton.Label" DefaultValue="Pacing"/>
         <bt:String id="StructureButton.Label" DefaultValue="Structure"/>
+        <bt:String id="PoSButton.Label" DefaultValue="PoS"/>
+        <bt:String id="PoVButton.Label" DefaultValue="PoV"/>
+        <bt:String id="SentimentButton.Label" DefaultValue="Sentiment"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Thanks for using Plotter! Go to the HOME tab and click the 'Basic Metrics' button to get started."/>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Show basic metrics such as word counts and readability scores."/>
+        <bt:String id="Metrics.Tooltip" DefaultValue="Show basic metrics such as word counts and readability scores."/>
         <bt:String id="PacingButton.Tooltip" DefaultValue="Show pacing information."/>
         <bt:String id="StructureButton.Tooltip" DefaultValue="Show structure tracking information."/>
+        <bt:String id="PoSButton.Tooltip" DefaultValue="Show parts of speech information."/>
+        <bt:String id="PoVButton.Tooltip" DefaultValue="Show points of view information."/>
+        <bt:String id="SentimentButton.Tooltip" DefaultValue="Show sentiment information."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

@@ -15,10 +15,13 @@ module.exports = async (env, options) => {
     devtool: "source-map",
     entry: {
       polyfill: "@babel/polyfill",
-      taskpane: "./src/taskpane/taskpane.js",
+      metrics: "./src/metrics/metrics.js",
       commands: "./src/commands/commands.js",
       pacing: "./src/pacing/pacing.js",
-      structure: "./src/structure/structure.js"
+      structure: "./src/structure/structure.js",
+      pos: "./src/pos/pos.js",
+      pov: "./src/pov/pov.js",
+      sentiment: "./src/sentiment/sentiment.js"
     },
     resolve: {
       extensions: [".ts", ".tsx", ".html", ".js"]
@@ -52,19 +55,19 @@ module.exports = async (env, options) => {
     plugins: [
       new CleanWebpackPlugin(),
       new HtmlWebpackPlugin({
-        filename: "taskpane.html",
-        template: "./src/taskpane/taskpane.html",
-        chunks: ["polyfill", "taskpane"]
+        filename: "metrics.html",
+        template: "./src/metrics/metrics.html",
+        chunks: ["polyfill", "metrics"]
       }),
       new CopyWebpackPlugin({
         patterns: [
         {
-          to: "taskpane.css",
-          from: "./src/taskpane/taskpane.css"
+          to: "metrics.css",
+          from: "./src/metrics/metrics.css"
         },
         {
           to: "metrics_worker.js",
-          from: "./src/taskpane/metrics_worker.js"
+          from: "./src/metrics/metrics_worker.js"
         },
         {
           to: "[name]." + buildType + ".[ext]",
@@ -124,6 +127,87 @@ module.exports = async (env, options) => {
         {
           to: "structure_worker.js",
           from: "./src/structure/structure_worker.js"
+        },
+        {
+          to: "[name]." + buildType + ".[ext]",
+          from: "manifest*.xml",
+          transform(content) {
+            if (dev) {
+              return content;
+            } else {
+              return content.toString().replace(new RegExp(urlDev, "g"), urlProd);
+            }
+          }
+        }
+      ]}),
+      new HtmlWebpackPlugin({
+        filename: "pos.html",
+        template: "./src/pos/pos.html",
+        chunks: ["polyfill", "pos"]
+      }),
+      new CopyWebpackPlugin({
+        patterns: [
+        {
+          to: "pos.css",
+          from: "./src/pos/pos.css"
+        },
+        {
+          to: "pos_worker.js",
+          from: "./src/pos/pos_worker.js"
+        },
+        {
+          to: "[name]." + buildType + ".[ext]",
+          from: "manifest*.xml",
+          transform(content) {
+            if (dev) {
+              return content;
+            } else {
+              return content.toString().replace(new RegExp(urlDev, "g"), urlProd);
+            }
+          }
+        }
+      ]}),
+      new HtmlWebpackPlugin({
+        filename: "pov.html",
+        template: "./src/pov/pov.html",
+        chunks: ["polyfill", "pov"]
+      }),
+      new CopyWebpackPlugin({
+        patterns: [
+        {
+          to: "pov.css",
+          from: "./src/pov/pov.css"
+        },
+        {
+          to: "pov_worker.js",
+          from: "./src/pov/pov_worker.js"
+        },
+        {
+          to: "[name]." + buildType + ".[ext]",
+          from: "manifest*.xml",
+          transform(content) {
+            if (dev) {
+              return content;
+            } else {
+              return content.toString().replace(new RegExp(urlDev, "g"), urlProd);
+            }
+          }
+        }
+      ]}),
+      new HtmlWebpackPlugin({
+        filename: "sentiment.html",
+        template: "./src/sentiment/sentiment.html",
+        chunks: ["polyfill", "sentiment"]
+      }),
+      new CopyWebpackPlugin({
+        patterns: [
+        {
+          to: "sentiment.css",
+          from: "./src/sentiment/sentiment.css"
+        },
+        {
+          to: "sentiment_worker.js",
+          from: "./src/sentiment/sentiment_worker.js"
         },
         {
           to: "[name]." + buildType + ".[ext]",
