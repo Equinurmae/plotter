@@ -31,55 +31,24 @@
         <span class="ms-Button-label">Refresh</span> 
       </button><br><br>
 
+      <p id="debug"></p>
+
       <p>Select a piece of text and we'll count the parts of speech in it!</p>
 
-      <div class="ms-MessageBar ms-MessageBar--success">
-        <div class="ms-MessageBar-content">
-          <div class="ms-MessageBar-icon">
-            <i class="ms-Icon ms-Icon--Completed"></i>
-          </div>
-          <div class="ms-MessageBar-text">
-            <span style="font-weight: 700">92% Active</span> | 8% Passive
-          </div>
-        </div>
-      </div>
+      <div id="active-passive"></div>
 
         <!-- Create a div where the graph will take place -->
         <div id="pos_vis"></div>
 
-      <div class="ms-MessageBar ms-MessageBar--success" style="width: 100%">
-        <div class="ms-MessageBar-content">
-          <div class="ms-MessageBar-icon">
-            <i class="ms-Icon ms-Icon--Completed"></i>
-          </div>
-          <div class="ms-MessageBar-text">
-            That's a nice ratio of <span style="font-weight: 700">adverbs</span> you've got there!
-          </div>
-        </div>
-      </div>
-
-      <div class="ms-MessageBar ms-MessageBar--success" style="width: 100%">
-        <div class="ms-MessageBar-content">
-          <div class="ms-MessageBar-icon">
-            <i class="ms-Icon ms-Icon--Completed"></i>
-          </div>
-          <div class="ms-MessageBar-text">
-            That's a nice ratio of <span style="font-weight: 700">adjectives</span> you've got there!
-          </div>
-        </div>
-      </div>
-
-      <div class="ms-MessageBar ms-MessageBar--warning" style="width: 100%">
-        <div class="ms-MessageBar-content">
-          <div class="ms-MessageBar-icon">
-            <i class="ms-Icon ms-Icon--Info"></i>
-          </div>
-          <div class="ms-MessageBar-text">
-            Woah! That's a lot of <span style="font-weight: 700">pronouns</span> there!
-          </div>
-        </div>
-      </div>
+      <div id="notifications"></div>
     </main>
+
+    <script>
+      var SpinnerElements = document.querySelectorAll(".ms-Spinner");
+      for (var i = 0; i < SpinnerElements.length; i++) {
+        new fabric['Spinner'](SpinnerElements[i]);
+      }
+    </script>
 
 </body>
 

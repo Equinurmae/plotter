@@ -3,13 +3,104 @@ import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
 
-import {
-  ma, dma, ema, sma, wma
-} from 'moving-averages';
-
 const d3 = require("d3");
 
-var options = {"readability": true, "words": true, "average": true, "z-scores": false, "detail": 100};
+const worker = new Worker("pos_worker.js");
+
+worker.onmessage = function(e) {
+  document.getElementById("debug").innerHTML = "Message received.";
+  draw_chart(e.data.pos);
+  let sentences = e.data.active + e.data.passive;
+  let active = ((e.data.active / sentences) * 100).toFixed(2);
+  let passive = ((e.data.passive / sentences) * 100).toFixed(2);
+  document.getElementById("active-passive").innerHTML = active > passive ? `<div class="ms-MessageBar ms-MessageBar--success">
+  <div class="ms-MessageBar-content">
+    <div class="ms-MessageBar-icon">
+      <i class="ms-Icon ms-Icon--Completed"></i>
+    </div>
+    <div class="ms-MessageBar-text">
+      <span style="font-weight: 700">` + active + `% Active</span> | ` + passive + `% Passive
+    </div>
+  </div>
+</div>`
+  : `<div class="ms-MessageBar ms-MessageBar--error">
+  <div class="ms-MessageBar-content">
+    <div class="ms-MessageBar-icon">
+      <i class="ms-Icon ms-Icon--ErrorBadge"></i>
+    </div>
+    <div class="ms-MessageBar-text">
+      ` + active + `% Active | <span style="font-weight: 700">` + passive + `% Passive</span>
+    </div>
+  </div>
+</div>`;
+
+  let words = e.data.pos.map(x => x.count).reduce((a,b) => a + b, 0);
+  let adjectives = e.data.pos[0].count / words;
+  let adverbs = e.data.pos[1].count / words;
+  let pronouns = e.data.pos[4].count / words;
+
+  document.getElementById("notifications").innerHTML = "";
+
+  document.getElementById("notifications").innerHTML += adjectives <= 0.1 ? `<div class="ms-MessageBar ms-MessageBar--success" style="width: 100%">
+    <div class="ms-MessageBar-content">
+      <div class="ms-MessageBar-icon">
+        <i class="ms-Icon ms-Icon--Completed"></i>
+      </div>
+      <div class="ms-MessageBar-text">
+        That's a nice ratio of <span style="font-weight: 700">adjectives</span> you've got there!
+      </div>
+    </div>
+  </div>` : `<div class="ms-MessageBar ms-MessageBar--warning" style="width: 100%">
+    <div class="ms-MessageBar-content">
+      <div class="ms-MessageBar-icon">
+        <i class="ms-Icon ms-Icon--Info"></i>
+      </div>
+      <div class="ms-MessageBar-text">
+        Woah! That's a lot of <span style="font-weight: 700">adjectives</span> there!
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById("notifications").innerHTML += adverbs <= 0.05 ? `<div class="ms-MessageBar ms-MessageBar--success" style="width: 100%">
+  <div class="ms-MessageBar-content">
+    <div class="ms-MessageBar-icon">
+      <i class="ms-Icon ms-Icon--Completed"></i>
+    </div>
+    <div class="ms-MessageBar-text">
+      That's a nice ratio of <span style="font-weight: 700">adverbs</span> you've got there!
+    </div>
+  </div>
+</div>` : `<div class="ms-MessageBar ms-MessageBar--warning" style="width: 100%">
+  <div class="ms-MessageBar-content">
+    <div class="ms-MessageBar-icon">
+      <i class="ms-Icon ms-Icon--Info"></i>
+    </div>
+    <div class="ms-MessageBar-text">
+      Woah! That's a lot of <span style="font-weight: 700">adverbs</span> there!
+    </div>
+  </div>
+</div>`;
+
+document.getElementById("notifications").innerHTML += pronouns <= 0.2 ? `<div class="ms-MessageBar ms-MessageBar--success" style="width: 100%">
+<div class="ms-MessageBar-content">
+  <div class="ms-MessageBar-icon">
+    <i class="ms-Icon ms-Icon--Completed"></i>
+  </div>
+  <div class="ms-MessageBar-text">
+    That's a nice ratio of <span style="font-weight: 700">pronouns</span> you've got there!
+  </div>
+</div>
+</div>` : `<div class="ms-MessageBar ms-MessageBar--warning" style="width: 100%">
+<div class="ms-MessageBar-content">
+  <div class="ms-MessageBar-icon">
+    <i class="ms-Icon ms-Icon--Info"></i>
+  </div>
+  <div class="ms-MessageBar-text">
+    Woah! That's a lot of <span style="font-weight: 700">pronouns</span> there!
+  </div>
+</div>
+</div>`;
+};
 
 /* global document, Office, Word */
 
@@ -23,24 +114,38 @@ Office.onReady(info => {
     // Assign event handlers and other initialization logic.
     document.getElementById("refresh").onclick = refresh;
 
-    refresh(true);
+    refresh();
 
     document.getElementById("sideload-msg").style.display = "none";
     document.getElementById("app-body").style.display = "flex";
   }
 });
 
+function loading() {
+  document.getElementById("active-passive").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("pos_vis").innerHTML = `<br><div class="ms-Spinner"></div><br>`;
+  document.getElementById("notifications").innerHTML = `<br><div class="ms-Spinner"></div><br>`;
 
-function refresh(first = false) {
+  var SpinnerElements = document.querySelectorAll(".ms-Spinner");
+  for (var i = 0; i < SpinnerElements.length; i++) {
+    new fabric['Spinner'](SpinnerElements[i]);
+  }
+}
+
+function refresh() {
+  loading();
+
   Word.run(function (context) {
-      let paragraphs = context.document.body.paragraphs;
-      paragraphs.load("text");
+    let body = context.document.body;
+    body.load("text");
 
-      return context.sync()
-        .then(function() {
-          draw_chart(paragraphs);
-        })
-        .then(context.sync);
+    return context.sync()
+      .then(function() {
+        document.getElementById("debug").innerHTML = "Message sending...";
+        worker.postMessage({"text": body.text});
+        document.getElementById("debug").innerHTML = "Message sent.";
+      })
+      .then(context.sync);
   })
   .catch(function (error) {
       console.log("Error: " + error);
@@ -50,8 +155,8 @@ function refresh(first = false) {
   });
 }
 
-function draw_chart(paragraphs) {
-  d3.select("svg").remove();
+function draw_chart(data) {
+  document.getElementById("pos_vis").innerHTML = "";
 
   // set the dimensions and margins of the graph
   var margin = {top: 30, right: 30, bottom: 50, left: 90}
@@ -59,7 +164,7 @@ function draw_chart(paragraphs) {
   , height = (5 * 50) - margin.top - margin.bottom; // Use the window's height
 
   var colourScale = d3.scaleSequential()
-  .domain([0,21])
+  .domain([0,d3.max(data.map(d => d.count))])
   .interpolator(d3.interpolateYlGnBu);
 
   // append the svg object to the body of the page
@@ -71,16 +176,10 @@ function draw_chart(paragraphs) {
   .attr("transform",
         "translate(" + margin.left + "," + margin.top + ")");
 
-  var data = [{"name": "Adverbs", "count": 1},
-  {"name": "Adjectives", "count": 6},
-  {"name": "Verbs", "count": 14},
-  {"name": "Pronouns", "count": 21},
-  {"name": "Proper Nouns", "count": 9}];
-
 
   // Add X axis
   var x = d3.scaleLinear()
-  .domain([0, 21])
+  .domain([0, d3.max(data.map(d => d.count))])
   .range([ 0, width]);
 
   // Y axis
