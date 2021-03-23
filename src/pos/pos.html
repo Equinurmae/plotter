@@ -33,20 +33,42 @@
 
       <p id="debug"></p>
 
-      <p>Select a piece of text and we'll count the parts of speech in it!</p>
+      <div class="ms-Pivot">
+        <ul class="ms-Pivot-links">
+          <li class="ms-Pivot-link is-selected" data-content="total" title="Total" tabindex="1">
+            Total
+          </li>
+          <li class="ms-Pivot-link " data-content="change" title="Change" tabindex="1">
+            Change
+          </li>
+        </ul>
+        <div class="ms-Pivot-content" data-content="total">
+          <p>Select a piece of text and we'll count the parts of speech in it!</p>
 
-      <div id="active-passive"></div>
+          <div id="active-passive"></div>
 
-        <!-- Create a div where the graph will take place -->
-        <div id="pos_vis"></div>
+            <!-- Create a div where the graph will take place -->
+            <div id="pos_vis"></div>
 
-      <div id="notifications"></div>
+          <div id="notifications"></div>
+        </div>
+        <div class="ms-Pivot-content" data-content="change">
+          <p>Select a piece of text and we'll show how the parts of speech in it change over time!</p>
+
+          <p id="test"></p>
+        </div>
+      </div>
     </main>
 
     <script>
       var SpinnerElements = document.querySelectorAll(".ms-Spinner");
       for (var i = 0; i < SpinnerElements.length; i++) {
         new fabric['Spinner'](SpinnerElements[i]);
+      }
+
+      var PivotElements = document.querySelectorAll(".ms-Pivot");
+      for (var i = 0; i < PivotElements.length; i++) {
+        new fabric['Pivot'](PivotElements[i]);
       }
     </script>
 

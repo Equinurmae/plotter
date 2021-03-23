@@ -5,6 +5,10 @@ self.nlp.extend(self.compromiseSentences);
 self.onmessage = function(e) {
     let doc = self.nlp(e.data.text);
 
+    self.postMessage(self.pos(doc));
+};
+
+function pos(doc) {
     let nouns = doc.match("#Noun").length;
     let pronouns = doc.match("#Pronoun").length;
     let proper_nouns = doc.match("#ProperNoun").length;
@@ -20,7 +24,7 @@ self.onmessage = function(e) {
     let passive = sentences.isPassive().out('array').length;
     let active = sentences.length - passive;
 
-    self.postMessage({"pos": [
+    return {"pos": [
         {"name": "Adjectives", "count": adjectives},
         {"name": "Adverbs", "count": adverbs},
         {"name": "Conjunctions", "count": conjunctions},
@@ -30,5 +34,5 @@ self.onmessage = function(e) {
         {"name": "Proper Nouns", "count": proper_nouns},
         {"name": "Prepositions", "count": prepositions},
         {"name": "Verbs", "count": verbs},
-    ], "passive": passive, "active": active});
-};
+    ], "passive": passive, "active": active};
+}

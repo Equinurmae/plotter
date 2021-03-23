@@ -7,9 +7,19 @@ const d3 = require("d3");
 
 const worker = new Worker("pos_worker.js");
 
+var pos_total = [{"name": "Adjectives", "count": 0},
+{"name": "Adverbs", "count": 0},
+{"name": "Conjunctions", "count": 0},
+{"name": "Determiners", "count": 0},
+{"name": "Pronouns", "count": 0},
+{"name": "Proper Nouns", "count": 0},
+{"name": "Prepositions", "count": 0},
+{"name": "Verbs", "count": 0}];
+
 worker.onmessage = function(e) {
   document.getElementById("debug").innerHTML = "Message received.";
-  draw_chart(e.data.pos);
+
+  update_chart(e.data.pos);
   let sentences = e.data.active + e.data.passive;
   let active = ((e.data.active / sentences) * 100).toFixed(2);
   let passive = ((e.data.passive / sentences) * 100).toFixed(2);
@@ -114,6 +124,7 @@ Office.onReady(info => {
     // Assign event handlers and other initialization logic.
     document.getElementById("refresh").onclick = refresh;
 
+    init_chart();
     refresh();
 
     document.getElementById("sideload-msg").style.display = "none";
@@ -123,7 +134,7 @@ Office.onReady(info => {
 
 function loading() {
   document.getElementById("active-passive").innerHTML = `<div class="ms-Spinner"></div>`;
-  document.getElementById("pos_vis").innerHTML = `<br><div class="ms-Spinner"></div><br>`;
+  // document.getElementById("pos_vis").innerHTML = `<br><div class="ms-Spinner"></div><br>`;
   document.getElementById("notifications").innerHTML = `<br><div class="ms-Spinner"></div><br>`;
 
   var SpinnerElements = document.querySelectorAll(".ms-Spinner");
@@ -155,7 +166,8 @@ function refresh() {
   });
 }
 
-function draw_chart(data) {
+
+  let data = pos_total;
   document.getElementById("pos_vis").innerHTML = "";
 
   // set the dimensions and margins of the graph
@@ -179,7 +191,7 @@ function draw_chart(data) {
 
   // Add X axis
   var x = d3.scaleLinear()
-  .domain([0, d3.max(data.map(d => d.count))])
+  .domain([0, 100])
   .range([ 0, width]);
 
   // Y axis
@@ -188,18 +200,29 @@ function draw_chart(data) {
   .domain(data.map(function(d) { return d.name; }))
   .padding(.1);
 
+function init_chart() {
   //Bars
   svg.selectAll("myRect")
   .data(data)
   .enter()
   .append("rect")
+  .attr("class", "bar")
   .attr("x", x(0) )
   .attr("y", function(d) { return y(d.name); })
-  .attr("width", function(d) { return x(d.count); })
+  .attr("width", 0) // always equal to 0
+  // .attr("width", function(d) { return x(d.count); })
   .attr("height", y.bandwidth() )
   .attr("fill", d => colourScale(d.count));
 
+  // Animation
+  svg.selectAll("rect")
+    .transition()
+    .duration(800)
+    .attr("width", function(d) { return x(d.count); })
+    .delay(function(d,i){console.log(i) ; return(i*100)})
+
   svg.append("g")
+  .attr("class", "x-axis")
   .attr("transform", "translate(0," + height + ")")
   .call(d3.axisBottom(x))
   .selectAll("text")
@@ -209,18 +232,55 @@ function draw_chart(data) {
   svg.append("g")
   .call(d3.axisLeft(y));
 
-      // text label for the x axis
-      svg.append("text")             
-      .attr("transform",
-            "translate(" + (width/2) + " ," + 
-                           (height + 40) + ")")
-      .style("text-anchor", "middle")
-      .text("Count");
+  // text label for the x axis
+  svg.append("text")             
+  .attr("transform",
+        "translate(" + (width/2) + " ," + 
+                        (height + 40) + ")")
+  .style("text-anchor", "middle")
+  .text("Count");
+}
 
+function update_chart(data) {
+  // Add X axis
+  var x = d3.scaleLinear()
+  .domain([0, d3.max(data.map(d => d.count))])
+  .range([ 0, width]);
 
-  // .attr("x", function(d) { return x(d.Country); })
-  // .attr("y", function(d) { return y(d.Value); })
-  // .attr("width", x.bandwidth())
-  // .attr("height", function(d) { return height - y(d.Value); })
-  // .attr("fill", "#69b3a2")
+  var colourScale = d3.scaleSequential()
+  .domain([0,d3.max(data.map(d => d.count))])
+  .interpolator(d3.interpolateYlGnBu);
+
+  d3.selectAll(".bar")
+      .data(data)
+      .transition().duration(800)
+      .attr("x", x(0) )
+      .attr("y", function(d) { return y(d.name); })
+      .attr("width", function(d) { return x(d.count); })
+      .attr("fill", d => colourScale(d.count));
+  
+  svg.selectAll(".x-axis").remove();
+
+  svg.append("g")
+  .attr("class", "x-axis")
+  .attr("transform", "translate(0," + height + ")")
+  .call(d3.axisBottom(x))
+  .selectAll("text")
+    .attr("transform", "translate(-10,0)rotate(-45)")
+    .style("text-anchor", "end");
+
+  // var rect = d3.select("svg").select("myRect").selectAll("rect")
+  // .data(data);
+
+  // rect.exit().remove();
+
+  // rect.enter().append("rect")
+  // .attr("width", 0);
+
+  // // Animation
+  // svg.selectAll("rect")
+  //   .transition()
+  //   .duration(800)
+  //   .attr("width", function(d) { return x(d.count); })
+  //   .delay(function(d,i){console.log(i) ; return(i*100)})
 }
