@@ -55,7 +55,22 @@
         <div class="ms-Pivot-content" data-content="change">
           <p>Select a piece of text and we'll show how the parts of speech in it change over time!</p>
 
-          <p id="test"></p>
+          <div class="ms-Dropdown">
+            <label class="ms-Label">Part of Speech</label>
+            <i class="ms-Dropdown-caretDown ms-Icon ms-Icon--ChevronDown"></i>
+            <select id="line_index" class="ms-Dropdown-select">
+              <option value="0">Adjectives</option>
+              <option value="1">Adverbs</option>
+              <option value="2">Conjunctions</option>
+              <option value="3">Determiners</option>
+              <option value="4">Pronouns</option>
+              <option value="5">Proper Nouns</option>
+              <option value="6">Prepositions</option>
+              <option value="7">Verbs</option>
+            </select>
+          </div>
+
+          <div id="line_chart_vis"></div>
         </div>
       </div>
     </main>
@@ -69,6 +84,11 @@
       var PivotElements = document.querySelectorAll(".ms-Pivot");
       for (var i = 0; i < PivotElements.length; i++) {
         new fabric['Pivot'](PivotElements[i]);
+      }
+
+      var DropdownHTMLElements = document.querySelectorAll('.ms-Dropdown');
+      for (var i = 0; i < DropdownHTMLElements.length; ++i) {
+        var Dropdown = new fabric['Dropdown'](DropdownHTMLElements[i]);
       }
     </script>
 

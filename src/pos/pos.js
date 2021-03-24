@@ -16,22 +16,39 @@ var barChartData = [
   {"name": "Verbs", "count": 0}
 ];
 
+var lineChartData = [];
+
+var totalActive = 0;
+var totalPassive = 0;
+
+var messageQueue = [];
+
 const worker = new Worker("pos_worker.js");
 
 worker.onmessage = function(e) {
   document.getElementById("debug").innerHTML = "Message received.";
 
-  barChartData = e.data.pos;
+  updateBarChartData(e.data.pos);
+  lineChartData.push(e.data.pos);
+  totalActive += e.data.active;
+  totalPassive += e.data.passive;
 
-  redrawBarChart();
+  redrawBarChart(messageQueue.length == 0);
 
-  getActivePassiveInfo(e.data.active, e.data.passive);
+  if(messageQueue.length > 0) {
+    worker.postMessage({"text": messageQueue.pop()});
+  } else {
+    getActivePassiveInfo(e.data.active, e.data.passive);
 
-  document.getElementById("notifications").innerHTML = "";
-  let words = e.data.pos.map(x => x.count).reduce((a,b) => a + b, 0);
-  getWordTypeInfo(0, words, 0.1, "adjectives");
-  getWordTypeInfo(1, words, 0.05, "adverbs");
-  getWordTypeInfo(4, words, 0.2, "pronouns");
+    document.getElementById("notifications").innerHTML = "";
+    let words = barChartData.map(x => x.count).reduce((a,b) => a + b, 0);
+    getWordTypeInfo(0, words, 0.1, "adjectives");
+    getWordTypeInfo(1, words, 0.05, "adverbs");
+    getWordTypeInfo(4, words, 0.2, "pronouns");
+
+    lineChartData.reverse();
+    drawLineChart(5);
+  }
 };
 
 document.getElementById("pos_vis").innerHTML = "";
@@ -75,6 +92,7 @@ Office.onReady(info => {
 
     // Assign event handlers and other initialization logic.
     document.getElementById("refresh").onclick = refresh;
+    document.getElementById("line_index").onchange = onLineIndexChange;
 
     drawBarChart();
     refresh();
@@ -86,15 +104,20 @@ Office.onReady(info => {
 
 function refresh() {
   loading();
+  resetBarChartData();
 
   Word.run(function (context) {
     let body = context.document.body;
     body.load("text");
 
+    let paragraphs = context.document.body.paragraphs;
+    paragraphs.load("text");
+
     return context.sync()
       .then(function() {
         document.getElementById("debug").innerHTML = "Message sending...";
-        worker.postMessage({"text": body.text});
+        messageQueue = paragraphs.items.map(paragraph => paragraph.text);
+        worker.postMessage({"text": messageQueue.pop()});
         document.getElementById("debug").innerHTML = "Message sent.";
       })
       .then(context.sync);
@@ -107,11 +130,39 @@ function refresh() {
   });
 }
 
-function getActivePassiveInfo(activeCount, passiveCount) {
-  let sentences = activeCount + passiveCount;
+function onLineIndexChange() {
+  redrawLineChart(parseInt(document.getElementById("line_index").value));
+}
 
-  let active = ((activeCount / sentences) * 100).toFixed(2);
-  let passive = ((passiveCount / sentences) * 100).toFixed(2);
+function resetBarChartData() {
+  barChartData = [
+    {"name": "Adjectives", "count": 0},
+    {"name": "Adverbs", "count": 0},
+    {"name": "Conjunctions", "count": 0},
+    {"name": "Determiners", "count": 0},
+    {"name": "Pronouns", "count": 0},
+    {"name": "Proper Nouns", "count": 0},
+    {"name": "Prepositions", "count": 0},
+    {"name": "Verbs", "count": 0}
+  ];
+
+  lineChartData = [];
+
+  totalActive = 0;
+  totalPassive = 0;
+}
+
+function updateBarChartData(newData) {
+  for(let i = 0; i < barChartData.length; i++) {
+    barChartData[i].count += newData[i].count;
+  }
+}
+
+function getActivePassiveInfo() {
+  let sentences = totalActive + totalPassive;
+
+  let active = ((totalActive / sentences) * 100).toFixed(2);
+  let passive = ((totalPassive / sentences) * 100).toFixed(2);
 
   document.getElementById("active-passive").innerHTML = `
     <div class="ms-MessageBar ms-MessageBar--` + (active > passive ? `success` : `error`) + `">
@@ -195,7 +246,7 @@ function drawBarChart() {
   .text("Count");
 }
 
-function redrawBarChart() {
+function redrawBarChart(animate = true) {
   // remake the scales
   xScale = d3.scaleLinear()
     .domain([0, d3.max(barChartData.map(d => d.count))])
@@ -208,7 +259,7 @@ function redrawBarChart() {
   // redraw the bars
   d3.selectAll(".bar")
       .data(barChartData)
-      .transition().duration(800)
+      .transition().duration(animate ? 800 : 10)
       .attr("x", xScale(0) )
       .attr("y", function(d) { return yScale(d.name); })
       .attr("width", function(d) { return xScale(d.count); })
@@ -224,4 +275,98 @@ function redrawBarChart() {
     .selectAll("text")
       .attr("transform", "translate(-10,0)rotate(-45)")
       .style("text-anchor", "end");
+}
+
+function drawLineChart(index) {
+  var margin = {top: 50, right: 50, bottom: 50, left: 60}
+    , width = window.innerWidth - margin.left - margin.right
+    , height = window.innerHeight - margin.top - margin.bottom;
+
+  var xScaleLine = d3.scaleLinear()
+    .domain([0, d3.max(lineChartData.map(d => d[index].count))])
+    .range([0, width]);
+
+  var yScaleLine = d3.scaleLinear()
+      .domain([lineChartData.length-1,0])
+      .range([height, 0]);
+
+  var line = d3.line()
+    .x(function(d) { return xScaleLine(d[index].count); })
+    .y(function(d, i) { return yScaleLine(i); })
+    .curve(d3.curveBasis)
+    .defined(d => d[index].count != undefined);
+
+  d3.select("#line_chart_vis").select("svg").remove();
+
+  var svg = d3.select("#line_chart_vis").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  svg.append("g")
+      .attr("class", "y-axis-line")
+      .call(d3.axisLeft(yScaleLine));
+
+  svg.append("path")
+      .datum(lineChartData)
+      .attr("class", "line")
+      .attr("stroke", "#0084ff")
+      .attr("fill", "none")
+      .attr("d", line);
+
+  svg.append("g")
+    .attr("class", "x-axis-line")
+    .attr("transform", "translate(0,0)")
+    .call(d3.axisTop(xScaleLine));
+
+  svg.append("text")             
+  .attr("transform",
+        "translate(" + (width/2) + " ," + 
+                       (- 30) + ")")
+  .style("text-anchor", "middle")
+  .text("Count");
+
+  svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left + 10)
+      .attr("x",0 - (height / 2))
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text("Paragraph #"); 
+}
+
+function redrawLineChart(index) {
+  var svg = d3.select("#line_chart_vis").select("svg");
+  var margin = {top: 50, right: 50, bottom: 50, left: 60}
+    , width = window.innerWidth - margin.left - margin.right
+    , height = window.innerHeight - margin.top - margin.bottom;
+
+  var xScaleLine = d3.scaleLinear()
+    .domain([0, d3.max(lineChartData.map(d => d[index].count))])
+    .range([0, width]);
+
+  var yScaleLine = d3.scaleLinear()
+    .domain([lineChartData.length-1,0])
+    .range([height, 0]);
+
+  var line = d3.line()
+    .x(function(d) { return xScaleLine(d[index].count); })
+    .y(function(d, i) { return yScaleLine(i); })
+    .curve(d3.curveBasis)
+    .defined(d => d[index].count != undefined);
+
+  // redraw the line
+  d3.selectAll(".line")
+      .datum(lineChartData)
+      .transition().duration(800)
+      .attr("d", line);
+  
+  // redraw the x axis with the new scale
+  svg.selectAll(".x-axis-line").remove();
+
+  svg.append("g")
+    .attr("class", "x-axis-line")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .call(d3.axisTop(xScaleLine));
 }
