@@ -5,112 +5,64 @@ import "../../assets/icon-80.png";
 
 const d3 = require("d3");
 
-const worker = new Worker("pos_worker.js");
+var barChartData = [
+  {"name": "Adjectives", "count": 0},
+  {"name": "Adverbs", "count": 0},
+  {"name": "Conjunctions", "count": 0},
+  {"name": "Determiners", "count": 0},
+  {"name": "Pronouns", "count": 0},
+  {"name": "Proper Nouns", "count": 0},
+  {"name": "Prepositions", "count": 0},
+  {"name": "Verbs", "count": 0}
+];
 
-var pos_total = [{"name": "Adjectives", "count": 0},
-{"name": "Adverbs", "count": 0},
-{"name": "Conjunctions", "count": 0},
-{"name": "Determiners", "count": 0},
-{"name": "Pronouns", "count": 0},
-{"name": "Proper Nouns", "count": 0},
-{"name": "Prepositions", "count": 0},
-{"name": "Verbs", "count": 0}];
+const worker = new Worker("pos_worker.js");
 
 worker.onmessage = function(e) {
   document.getElementById("debug").innerHTML = "Message received.";
 
-  update_chart(e.data.pos);
-  let sentences = e.data.active + e.data.passive;
-  let active = ((e.data.active / sentences) * 100).toFixed(2);
-  let passive = ((e.data.passive / sentences) * 100).toFixed(2);
-  document.getElementById("active-passive").innerHTML = active > passive ? `<div class="ms-MessageBar ms-MessageBar--success">
-  <div class="ms-MessageBar-content">
-    <div class="ms-MessageBar-icon">
-      <i class="ms-Icon ms-Icon--Completed"></i>
-    </div>
-    <div class="ms-MessageBar-text">
-      <span style="font-weight: 700">` + active + `% Active</span> | ` + passive + `% Passive
-    </div>
-  </div>
-</div>`
-  : `<div class="ms-MessageBar ms-MessageBar--error">
-  <div class="ms-MessageBar-content">
-    <div class="ms-MessageBar-icon">
-      <i class="ms-Icon ms-Icon--ErrorBadge"></i>
-    </div>
-    <div class="ms-MessageBar-text">
-      ` + active + `% Active | <span style="font-weight: 700">` + passive + `% Passive</span>
-    </div>
-  </div>
-</div>`;
+  barChartData = e.data.pos;
 
-  let words = e.data.pos.map(x => x.count).reduce((a,b) => a + b, 0);
-  let adjectives = e.data.pos[0].count / words;
-  let adverbs = e.data.pos[1].count / words;
-  let pronouns = e.data.pos[4].count / words;
+  redrawBarChart();
+
+  getActivePassiveInfo(e.data.active, e.data.passive);
 
   document.getElementById("notifications").innerHTML = "";
-
-  document.getElementById("notifications").innerHTML += adjectives <= 0.1 ? `<div class="ms-MessageBar ms-MessageBar--success" style="width: 100%">
-    <div class="ms-MessageBar-content">
-      <div class="ms-MessageBar-icon">
-        <i class="ms-Icon ms-Icon--Completed"></i>
-      </div>
-      <div class="ms-MessageBar-text">
-        That's a nice ratio of <span style="font-weight: 700">adjectives</span> you've got there!
-      </div>
-    </div>
-  </div>` : `<div class="ms-MessageBar ms-MessageBar--warning" style="width: 100%">
-    <div class="ms-MessageBar-content">
-      <div class="ms-MessageBar-icon">
-        <i class="ms-Icon ms-Icon--Info"></i>
-      </div>
-      <div class="ms-MessageBar-text">
-        Woah! That's a lot of <span style="font-weight: 700">adjectives</span> there!
-      </div>
-    </div>
-  </div>`;
-
-  document.getElementById("notifications").innerHTML += adverbs <= 0.05 ? `<div class="ms-MessageBar ms-MessageBar--success" style="width: 100%">
-  <div class="ms-MessageBar-content">
-    <div class="ms-MessageBar-icon">
-      <i class="ms-Icon ms-Icon--Completed"></i>
-    </div>
-    <div class="ms-MessageBar-text">
-      That's a nice ratio of <span style="font-weight: 700">adverbs</span> you've got there!
-    </div>
-  </div>
-</div>` : `<div class="ms-MessageBar ms-MessageBar--warning" style="width: 100%">
-  <div class="ms-MessageBar-content">
-    <div class="ms-MessageBar-icon">
-      <i class="ms-Icon ms-Icon--Info"></i>
-    </div>
-    <div class="ms-MessageBar-text">
-      Woah! That's a lot of <span style="font-weight: 700">adverbs</span> there!
-    </div>
-  </div>
-</div>`;
-
-document.getElementById("notifications").innerHTML += pronouns <= 0.2 ? `<div class="ms-MessageBar ms-MessageBar--success" style="width: 100%">
-<div class="ms-MessageBar-content">
-  <div class="ms-MessageBar-icon">
-    <i class="ms-Icon ms-Icon--Completed"></i>
-  </div>
-  <div class="ms-MessageBar-text">
-    That's a nice ratio of <span style="font-weight: 700">pronouns</span> you've got there!
-  </div>
-</div>
-</div>` : `<div class="ms-MessageBar ms-MessageBar--warning" style="width: 100%">
-<div class="ms-MessageBar-content">
-  <div class="ms-MessageBar-icon">
-    <i class="ms-Icon ms-Icon--Info"></i>
-  </div>
-  <div class="ms-MessageBar-text">
-    Woah! That's a lot of <span style="font-weight: 700">pronouns</span> there!
-  </div>
-</div>
-</div>`;
+  let words = e.data.pos.map(x => x.count).reduce((a,b) => a + b, 0);
+  getWordTypeInfo(0, words, 0.1, "adjectives");
+  getWordTypeInfo(1, words, 0.05, "adverbs");
+  getWordTypeInfo(4, words, 0.2, "pronouns");
 };
+
+document.getElementById("pos_vis").innerHTML = "";
+
+/* global variables for the bar chart */
+
+var margin = {top: 30, right: 30, bottom: 50, left: 90}
+, width = window.innerWidth - margin.left - margin.right
+, height = (5 * 50) - margin.top - margin.bottom;
+
+var svg = d3.select("#pos_vis")
+  .append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform",
+        "translate(" + margin.left + "," + margin.top + ")");
+
+// create the scales for the bar chart
+var xScale = d3.scaleLinear()
+  .domain([0, 100])
+  .range([ 0, width]);
+
+var yScale = d3.scaleBand()
+  .range([ 0, height ])
+  .domain(barChartData.map(function(d) { return d.name; }))
+  .padding(.1);
+
+var colourScale = d3.scaleSequential()
+  .domain([0,d3.max(barChartData.map(d => d.count))])
+  .interpolator(d3.interpolateYlGnBu);
 
 /* global document, Office, Word */
 
@@ -124,24 +76,13 @@ Office.onReady(info => {
     // Assign event handlers and other initialization logic.
     document.getElementById("refresh").onclick = refresh;
 
-    init_chart();
+    drawBarChart();
     refresh();
 
     document.getElementById("sideload-msg").style.display = "none";
     document.getElementById("app-body").style.display = "flex";
   }
 });
-
-function loading() {
-  document.getElementById("active-passive").innerHTML = `<div class="ms-Spinner"></div>`;
-  // document.getElementById("pos_vis").innerHTML = `<br><div class="ms-Spinner"></div><br>`;
-  document.getElementById("notifications").innerHTML = `<br><div class="ms-Spinner"></div><br>`;
-
-  var SpinnerElements = document.querySelectorAll(".ms-Spinner");
-  for (var i = 0; i < SpinnerElements.length; i++) {
-    new fabric['Spinner'](SpinnerElements[i]);
-  }
-}
 
 function refresh() {
   loading();
@@ -166,73 +107,86 @@ function refresh() {
   });
 }
 
+function getActivePassiveInfo(activeCount, passiveCount) {
+  let sentences = activeCount + passiveCount;
 
-  let data = pos_total;
-  document.getElementById("pos_vis").innerHTML = "";
+  let active = ((activeCount / sentences) * 100).toFixed(2);
+  let passive = ((passiveCount / sentences) * 100).toFixed(2);
 
-  // set the dimensions and margins of the graph
-  var margin = {top: 30, right: 30, bottom: 50, left: 90}
-  , width = window.innerWidth - margin.left - margin.right // Use the window's width 
-  , height = (5 * 50) - margin.top - margin.bottom; // Use the window's height
+  document.getElementById("active-passive").innerHTML = `
+    <div class="ms-MessageBar ms-MessageBar--` + (active > passive ? `success` : `error`) + `">
+      <div class="ms-MessageBar-content">
+        <div class="ms-MessageBar-icon">
+          <i class="ms-Icon ms-Icon--` + (active > passive ? `Completed` : `ErrorBadge`) + `"></i>
+        </div>
+        <div class="ms-MessageBar-text">` + (active > passive ? 
+            `<span style="font-weight: 700">` + active + `% Active</span> | ` + passive + `% Passive`
+            : active + `% Active | <span style="font-weight: 700">` + passive + `% Passive</span>`) + `
+        </div>
+      </div>
+    </div>`;
+}
 
-  var colourScale = d3.scaleSequential()
-  .domain([0,d3.max(data.map(d => d.count))])
-  .interpolator(d3.interpolateYlGnBu);
+function getWordTypeInfo(index, words, tolerance, name) {
+  let percentage = barChartData[index].count / words;
 
-  // append the svg object to the body of the page
-  var svg = d3.select("#pos_vis")
-  .append("svg")
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-  .attr("transform",
-        "translate(" + margin.left + "," + margin.top + ")");
+  document.getElementById("notifications").innerHTML += `
+    <div class="ms-MessageBar ms-MessageBar--` + (percentage <= tolerance ? `success` : `warning`) + `" style="width: 100%">
+      <div class="ms-MessageBar-content">
+        <div class="ms-MessageBar-icon">
+          <i class="ms-Icon ms-Icon--` + (percentage <= tolerance ? `Completed` : `Info`) + `"></i>
+        </div>
+        <div class="ms-MessageBar-text">` + (percentage <= tolerance ?
+          `That's a nice ratio of <span style="font-weight: 700">` + name + `</span> you've got there!` :
+          `Woah! That's a lot of <span style="font-weight: 700">` + name + `</span> there!`) + `
+        </div>
+      </div>
+    </div>`;
+}
 
+function loading() {
+  document.getElementById("active-passive").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("notifications").innerHTML = `<br><div class="ms-Spinner"></div><br>`;
 
-  // Add X axis
-  var x = d3.scaleLinear()
-  .domain([0, 100])
-  .range([ 0, width]);
+  var SpinnerElements = document.querySelectorAll(".ms-Spinner");
+  for (var i = 0; i < SpinnerElements.length; i++) {
+    new fabric['Spinner'](SpinnerElements[i]);
+  }
+}
 
-  // Y axis
-  var y = d3.scaleBand()
-  .range([ 0, height ])
-  .domain(data.map(function(d) { return d.name; }))
-  .padding(.1);
-
-function init_chart() {
-  //Bars
+function drawBarChart() {
+  // draw the bars
   svg.selectAll("myRect")
-  .data(data)
-  .enter()
-  .append("rect")
-  .attr("class", "bar")
-  .attr("x", x(0) )
-  .attr("y", function(d) { return y(d.name); })
-  .attr("width", 0) // always equal to 0
-  // .attr("width", function(d) { return x(d.count); })
-  .attr("height", y.bandwidth() )
-  .attr("fill", d => colourScale(d.count));
+    .data(barChartData)
+    .enter()
+    .append("rect")
+    .attr("class", "bar")
+    .attr("x", xScale(0) )
+    .attr("y", function(d) { return yScale(d.name); })
+    .attr("width", 0)
+    .attr("height", yScale.bandwidth() )
+    .attr("fill", d => colourScale(d.count));
 
-  // Animation
+  // animate the bars
   svg.selectAll("rect")
     .transition()
     .duration(800)
-    .attr("width", function(d) { return x(d.count); })
-    .delay(function(d,i){console.log(i) ; return(i*100)})
+    .attr("width", function(d) { return xScale(d.count); })
+    .delay(function(d,i){return(i*100);})
+
+  // draw the axes
+  svg.append("g")
+    .attr("class", "x-axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(xScale))
+    .selectAll("text")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .style("text-anchor", "end");
 
   svg.append("g")
-  .attr("class", "x-axis")
-  .attr("transform", "translate(0," + height + ")")
-  .call(d3.axisBottom(x))
-  .selectAll("text")
-    .attr("transform", "translate(-10,0)rotate(-45)")
-    .style("text-anchor", "end");
+    .call(d3.axisLeft(yScale));
 
-  svg.append("g")
-  .call(d3.axisLeft(y));
-
-  // text label for the x axis
+  // draw the x axis label
   svg.append("text")             
   .attr("transform",
         "translate(" + (width/2) + " ," + 
@@ -241,46 +195,33 @@ function init_chart() {
   .text("Count");
 }
 
-function update_chart(data) {
-  // Add X axis
-  var x = d3.scaleLinear()
-  .domain([0, d3.max(data.map(d => d.count))])
-  .range([ 0, width]);
+function redrawBarChart() {
+  // remake the scales
+  xScale = d3.scaleLinear()
+    .domain([0, d3.max(barChartData.map(d => d.count))])
+    .range([ 0, width]);
 
-  var colourScale = d3.scaleSequential()
-  .domain([0,d3.max(data.map(d => d.count))])
+  colourScale = d3.scaleSequential()
+  .domain([0,d3.max(barChartData.map(d => d.count))])
   .interpolator(d3.interpolateYlGnBu);
 
+  // redraw the bars
   d3.selectAll(".bar")
-      .data(data)
+      .data(barChartData)
       .transition().duration(800)
-      .attr("x", x(0) )
-      .attr("y", function(d) { return y(d.name); })
-      .attr("width", function(d) { return x(d.count); })
+      .attr("x", xScale(0) )
+      .attr("y", function(d) { return yScale(d.name); })
+      .attr("width", function(d) { return xScale(d.count); })
       .attr("fill", d => colourScale(d.count));
   
+  // redraw the x axis with the new scale
   svg.selectAll(".x-axis").remove();
 
   svg.append("g")
-  .attr("class", "x-axis")
-  .attr("transform", "translate(0," + height + ")")
-  .call(d3.axisBottom(x))
-  .selectAll("text")
-    .attr("transform", "translate(-10,0)rotate(-45)")
-    .style("text-anchor", "end");
-
-  // var rect = d3.select("svg").select("myRect").selectAll("rect")
-  // .data(data);
-
-  // rect.exit().remove();
-
-  // rect.enter().append("rect")
-  // .attr("width", 0);
-
-  // // Animation
-  // svg.selectAll("rect")
-  //   .transition()
-  //   .duration(800)
-  //   .attr("width", function(d) { return x(d.count); })
-  //   .delay(function(d,i){console.log(i) ; return(i*100)})
+    .attr("class", "x-axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(xScale))
+    .selectAll("text")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .style("text-anchor", "end");
 }
