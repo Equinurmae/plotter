@@ -107,16 +107,28 @@ function refresh() {
   resetBarChartData();
 
   Word.run(function (context) {
-    let body = context.document.body;
-    body.load("text");
-
     let paragraphs = context.document.body.paragraphs;
     paragraphs.load("text");
+
+    var selection = context.document.getSelection();
+
+    selection.load("text");
+
+    selection.paragraphs.load("text");
 
     return context.sync()
       .then(function() {
         document.getElementById("debug").innerHTML = "Message sending...";
-        messageQueue = paragraphs.items.map(paragraph => paragraph.text);
+        
+        if(selection.text.length == 0) {
+          messageQueue = paragraphs.items.map(paragraph => paragraph.text);
+        } else {
+          
+          messageQueue = selection.paragraphs.items.map(paragraph => paragraph.text);
+        }
+
+
+        
         worker.postMessage({"text": messageQueue.pop()});
         document.getElementById("debug").innerHTML = "Message sent.";
       })
