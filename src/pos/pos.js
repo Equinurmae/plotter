@@ -10,6 +10,7 @@ var barChartData = [
   {"name": "Adverbs", "count": 0},
   {"name": "Conjunctions", "count": 0},
   {"name": "Determiners", "count": 0},
+  {"name": "Nouns", "count": 0},
   {"name": "Pronouns", "count": 0},
   {"name": "Proper Nouns", "count": 0},
   {"name": "Prepositions", "count": 0},
@@ -44,7 +45,7 @@ worker.onmessage = function(e) {
     let words = barChartData.map(x => x.count).reduce((a,b) => a + b, 0);
     getWordTypeInfo(0, words, 0.1, "adjectives");
     getWordTypeInfo(1, words, 0.05, "adverbs");
-    getWordTypeInfo(4, words, 0.2, "pronouns");
+    // getWordTypeInfo(4, words, 0.3, "pronouns");
 
     lineChartData.reverse();
     drawLineChart(5);
@@ -123,11 +124,25 @@ function refresh() {
         if(selection.text.length == 0) {
           messageQueue = paragraphs.items.map(paragraph => paragraph.text);
         } else {
-          
-          messageQueue = selection.paragraphs.items.map(paragraph => paragraph.text);
+          let results = selection.paragraphs.items.map(paragraph => paragraph.text);
+
+          if(results.length > 1) {
+            let wholeText = results.join('\r');
+            let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
+
+            if(match != null) {
+              let firstParagraphMatch = new RegExp(match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(results[0]);
+              results[0] = firstParagraphMatch[1];
+
+              let lastParagraphMatch = new RegExp('(.*)' + match[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g').exec(results[results.length-1]);
+              results[results-1] = lastParagraphMatch[1];
+            }
+          } else {
+            results[0] = selection.text;
+          }
+
+          messageQueue = results;
         }
-
-
         
         worker.postMessage({"text": messageQueue.pop()});
         document.getElementById("debug").innerHTML = "Message sent.";
@@ -152,6 +167,7 @@ function resetBarChartData() {
     {"name": "Adverbs", "count": 0},
     {"name": "Conjunctions", "count": 0},
     {"name": "Determiners", "count": 0},
+    {"name": "Nouns", "count": 0},
     {"name": "Pronouns", "count": 0},
     {"name": "Proper Nouns", "count": 0},
     {"name": "Prepositions", "count": 0},
@@ -290,12 +306,18 @@ function redrawBarChart(animate = true) {
 }
 
 function drawLineChart(index) {
+  var wordCounts = lineChartData.map(d => d.map(x => x.count).reduce((a, b) => a + b, 0)); 
+
   var margin = {top: 50, right: 50, bottom: 50, left: 60}
     , width = window.innerWidth - margin.left - margin.right
     , height = window.innerHeight - margin.top - margin.bottom;
 
   var xScaleLine = d3.scaleLinear()
     .domain([0, d3.max(lineChartData.map(d => d[index].count))])
+    .range([0, width]);
+
+  var xScaleWordLine = d3.scaleLinear()
+    .domain([0, d3.max(wordCounts)])
     .range([0, width]);
 
   var yScaleLine = d3.scaleLinear()
@@ -307,6 +329,12 @@ function drawLineChart(index) {
     .y(function(d, i) { return yScaleLine(i); })
     .curve(d3.curveBasis)
     .defined(d => d[index].count != undefined);
+  
+  var wordLine = d3.line()
+    .x(function(d) { return xScaleWordLine(d); })
+    .y(function(d, i) { return yScaleLine(i); })
+    .curve(d3.curveBasis)
+    .defined(d => d != undefined);
 
   d3.select("#line_chart_vis").select("svg").remove();
 
@@ -319,6 +347,14 @@ function drawLineChart(index) {
   svg.append("g")
       .attr("class", "y-axis-line")
       .call(d3.axisLeft(yScaleLine));
+
+  svg.append("path")
+    .datum(wordCounts)
+    .attr("class", "word-line")
+    .attr("stroke", "#c9e5ff")
+    .attr("fill", "none")
+    .attr("stroke-dasharray", "5px")
+    .attr("d", wordLine);
 
   svg.append("path")
       .datum(lineChartData)

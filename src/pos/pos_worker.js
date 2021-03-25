@@ -9,7 +9,6 @@ self.onmessage = function(e) {
 };
 
 function pos(doc) {
-    let nouns = doc.match("#Noun").length;
     let pronouns = doc.match("#Pronoun").length;
     let proper_nouns = doc.match("#ProperNoun").length;
     let verbs = doc.match("#Verb").length;
@@ -18,6 +17,8 @@ function pos(doc) {
     let conjunctions = doc.match("#Conjunction").length;
     let prepositions = doc.match("#Preposition").length;
     let determiners = doc.match("#Determiner").length;
+
+    let nouns = doc.match("#Noun").length - pronouns - proper_nouns;
 
     let sentences = doc.sentences();
 
@@ -29,7 +30,7 @@ function pos(doc) {
         {"name": "Adverbs", "count": adverbs},
         {"name": "Conjunctions", "count": conjunctions},
         {"name": "Determiners", "count": determiners},
-        // {"name": "Nouns", "count": nouns},
+        {"name": "Nouns", "count": nouns},
         {"name": "Pronouns", "count": pronouns},
         {"name": "Proper Nouns", "count": proper_nouns},
         {"name": "Prepositions", "count": prepositions},
