@@ -95,6 +95,10 @@ Office.onReady(info => {
     document.getElementById("refresh").onclick = refresh;
     document.getElementById("line_index").onchange = onLineIndexChange;
 
+    // document.getElementById("line_chart_vis").onclick = function() {
+    //   document.getElementById("test").innerHTML = "test";
+    // };
+
     drawBarChart();
     refresh();
 
@@ -381,7 +385,7 @@ function drawLineChart(index) {
       .attr("x",0 - (height / 2))
       .attr("dy", "1em")
       .style("text-anchor", "middle")
-      .text("Paragraph #"); 
+      .text("Paragraph #");
 }
 
 function redrawLineChart(index) {
