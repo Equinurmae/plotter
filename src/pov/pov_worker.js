@@ -16,3 +16,4 @@ function count_pronouns(doc) {
 
     return {"pronouns" : {"1st": first, "2nd": second, "3rd": third, "male": male, "female": female, "neutral": neutral}};
 }
+

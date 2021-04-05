@@ -9,16 +9,25 @@ var messageQueue = [];
 
 const worker = new Worker("pov_worker.js");
 
+var pronoun_data = {"1st": 0, "2nd": 0, "3rd": 0};
+
+var lineChartData = [];
+
 worker.onmessage = function(e) {
   document.getElementById("debug").innerHTML = "Message received.";
 
   updatePronounData(e.data.pronouns);
+  lineChartData.push(e.data.pronouns);
+
   redrawPieChart(messageQueue.length == 0);
 
   if(messageQueue.length > 0) {  
     worker.postMessage({"text": messageQueue.pop()});
   } else {
     document.getElementById("guess").innerHTML = Object.entries(pronoun_data).sort((a,b) => a[1] - b[1])[2][0] + " person";
+
+    lineChartData.reverse();
+    drawLineChart("3rd");
   }
 };
 
@@ -35,8 +44,6 @@ var svg = d3.select("#pie_chart_vis")
   .append("g")
   .attr("transform",
         "translate(" + ((width / 2) + margin.left) + "," + ((height / 2) + margin.top) + ")");
-
-var pronoun_data = {"1st": 0, "2nd": 0, "3rd": 0};
 
 var colourScale = d3.scaleOrdinal(d3.schemeSet3);
 
@@ -61,6 +68,7 @@ Office.onReady(info => {
     // Assign event handlers and other initialization logic.
 
     document.getElementById("refresh").onclick = refresh;
+    document.getElementById("line_key").onchange = onLineKeyChange;
 
     refresh();
     drawPieChart();
@@ -69,6 +77,10 @@ Office.onReady(info => {
     document.getElementById("app-body").style.display = "flex";
   }
 });
+
+function onLineKeyChange() {
+  redrawLineChart(document.getElementById("line_key").value);
+}
 
 function refresh() {
   resetPronounData();
@@ -181,4 +193,100 @@ function updatePronounData(newData) {
 
 function resetPronounData() {
   pronoun_data = {"1st": 0, "2nd": 0, "3rd": 0};
+  lineChartData = [];
+}
+
+function drawLineChart(key) {
+  var line_margin = {top: 50, right: 50, bottom: 50, left: 60}
+    , line_width = window.innerWidth - line_margin.left - line_margin.right
+    , line_height = window.innerHeight - line_margin.top - line_margin.bottom;
+
+  var xScaleLine = d3.scaleLinear()
+    .domain([0, d3.max(lineChartData.map(d => d[key]))])
+    .range([0, line_width]);
+
+  var yScaleLine = d3.scaleLinear()
+      .domain([lineChartData.length-1,0])
+      .range([line_height, 0]);
+
+  var line = d3.line()
+    .x(function(d) { return xScaleLine(d[key]); })
+    .y(function(d, i) { return yScaleLine(i); })
+    .curve(d3.curveBasis)
+    .defined(d => d[key] != undefined);
+
+  d3.select("#line_chart_vis").select("svg").remove();
+
+  var line_svg = d3.select("#line_chart_vis").append("svg")
+    .attr("width", line_width + line_margin.left + line_margin.right)
+    .attr("height", line_height + line_margin.top + line_margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + line_margin.left + "," + line_margin.top + ")");
+
+  line_svg.append("g")
+      .attr("class", "y-axis-line")
+      .call(d3.axisLeft(yScaleLine));
+
+  line_svg.append("path")
+      .datum(lineChartData)
+      .attr("class", "line")
+      .attr("stroke", "#0084ff")
+      .attr("fill", "none")
+      .attr("d", line);
+
+  line_svg.append("g")
+    .attr("class", "x-axis-line")
+    .attr("transform", "translate(0,0)")
+    .call(d3.axisTop(xScaleLine));
+
+  line_svg.append("text")             
+  .attr("transform",
+        "translate(" + (line_width/2) + " ," + 
+                       (- 30) + ")")
+  .style("text-anchor", "middle")
+  .text("Count");
+
+  line_svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - line_margin.left + 10)
+      .attr("x",0 - (line_height / 2))
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text("Paragraph #");
+}
+
+function redrawLineChart(key) {
+  var svg = d3.select("#line_chart_vis").select("svg");
+  
+  var margin = {top: 50, right: 50, bottom: 50, left: 60}
+    , width = window.innerWidth - margin.left - margin.right
+    , height = window.innerHeight - margin.top - margin.bottom;
+
+  var xScaleLine = d3.scaleLinear()
+    .domain([0, d3.max(lineChartData.map(d => d[key]))])
+    .range([0, width]);
+
+  var yScaleLine = d3.scaleLinear()
+    .domain([lineChartData.length-1,0])
+    .range([height, 0]);
+
+  var line = d3.line()
+    .x(function(d) { return xScaleLine(d[key]); })
+    .y(function(d, i) { return yScaleLine(i); })
+    .curve(d3.curveBasis)
+    .defined(d => d[key] != undefined);
+
+  // redraw the line
+  d3.selectAll(".line")
+      .datum(lineChartData)
+      .transition().duration(800)
+      .attr("d", line);
+  
+  // redraw the x axis with the new scale
+  svg.selectAll(".x-axis-line").remove();
+
+  svg.append("g")
+    .attr("class", "x-axis-line")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .call(d3.axisTop(xScaleLine));
 }
