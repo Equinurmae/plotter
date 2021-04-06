@@ -3,13 +3,40 @@ import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
 
-import {
-  ma, dma, ema, sma, wma
-} from 'moving-averages';
-
 const d3 = require("d3");
 
-var options = {"readability": true, "words": true, "average": true, "z-scores": false, "detail": 100};
+var messageQueue = [];
+
+var polarity = [];
+
+const worker = new Worker("sentiment_worker.js");
+
+worker.onmessage = function(e) {
+  document.getElementById("debug").innerHTML = "Message received.";
+
+  polarity.push(e.data.polarity);
+
+  let avg = polarity.reduce((a, b) => a + b, 0) / polarity.length;
+
+  document.getElementById("polarity").innerHTML = `<div class="ms-MessageBar ms-MessageBar--` + (avg == 0 ? 'warning' : (avg < 0 ? 'error' : 'success')) + `">
+  <div class="ms-MessageBar-content">
+    <div class="ms-MessageBar-icon">
+      <i class="ms-Icon ms-Icon--Completed"></i>
+    </div>
+    <div class="ms-MessageBar-text">
+      The polarity of this text is <span style="font-weight: 700">` + Math.abs(avg.toFixed(2) * 100) + '% ' + (avg == 0 ? 'neutral' : (avg < 0 ? 'negative' : 'positive')) + `</span>.
+    </div>
+  </div>
+</div>`;
+
+  if(messageQueue.length > 0) { 
+    worker.postMessage({"text": messageQueue.pop().replace(/[^\x20-\x7E]/g, '')});
+  } else {
+    draw_chart();
+    polarity.reverse();
+    drawLineChart();
+  }
+};
 
 /* global document, Office, Word */
 
@@ -31,15 +58,49 @@ Office.onReady(info => {
 });
 
 function refresh() {
-  Word.run(function (context) {
-      let paragraphs = context.document.body.paragraphs;
-      paragraphs.load("text");
+  polarity = [];
 
-      return context.sync()
-        .then(function() {
-          draw_chart(paragraphs);
-        })
-        .then(context.sync);
+  Word.run(function (context) {
+    let paragraphs = context.document.body.paragraphs;
+    paragraphs.load("text");
+
+    var selection = context.document.getSelection();
+
+    selection.load("text");
+
+    selection.paragraphs.load("text");
+
+    return context.sync()
+      .then(function() {
+        document.getElementById("debug").innerHTML = "Message sending...";
+        
+        if(selection.text.length == 0) {
+          messageQueue = paragraphs.items.map(paragraph => paragraph.text);
+        } else {
+          let results = selection.paragraphs.items.map(paragraph => paragraph.text);
+
+          if(results.length > 1) {
+            let wholeText = results.join('\r');
+            let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
+
+            if(match != null) {
+              let firstParagraphMatch = new RegExp(match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(results[0]);
+              results[0] = firstParagraphMatch[1];
+
+              let lastParagraphMatch = new RegExp('(.*)' + match[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g').exec(results[results.length-1]);
+              results[results-1] = lastParagraphMatch[1];
+            }
+          } else {
+            results[0] = selection.text;
+          }
+
+          messageQueue = results;
+        }
+        
+        worker.postMessage({"text": messageQueue.pop().replace(/[^\x20-\x7E]/g, '')});
+        document.getElementById("debug").innerHTML = "Message sent.";
+      })
+      .then(context.sync);
   })
   .catch(function (error) {
       console.log("Error: " + error);
@@ -49,7 +110,7 @@ function refresh() {
   });
 }
 
-function draw_chart(paragraphs) {
+function draw_chart() {
   d3.select("svg").remove();
 
   var margin = {top: 50, right: 50, bottom: 50, left: 50}
@@ -145,4 +206,64 @@ function draw_chart(paragraphs) {
         .attr("stroke-opacity", 1)
         .attr("opacity", 0.5);
   }
+}
+
+function drawLineChart() {
+  var line_margin = {top: 50, right: 50, bottom: 50, left: 60}
+    , line_width = window.innerWidth - line_margin.left - line_margin.right
+    , line_height = window.innerHeight - line_margin.top - line_margin.bottom;
+
+  var xScaleLine = d3.scaleLinear()
+    .domain([-1, 1])
+    .range([0, line_width]);
+
+  var yScaleLine = d3.scaleLinear()
+      .domain([polarity.length-1,0])
+      .range([line_height, 0]);
+
+  var line = d3.line()
+    .x(function(d) { return xScaleLine(d); })
+    .y(function(d, i) { return yScaleLine(i); })
+    .curve(d3.curveBasis)
+    .defined(d => d != undefined);
+
+  d3.select("#line_chart_vis").select("svg").remove();
+
+  var line_svg = d3.select("#line_chart_vis").append("svg")
+    .attr("width", line_width + line_margin.left + line_margin.right)
+    .attr("height", line_height + line_margin.top + line_margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + line_margin.left + "," + line_margin.top + ")");
+
+  line_svg.append("g")
+      .attr("class", "y-axis-line")
+      .attr("transform", "translate(" + (line_width / 2) + ",0)")
+      .call(d3.axisLeft(yScaleLine));
+
+  line_svg.append("path")
+      .datum(polarity)
+      .attr("class", "line")
+      .attr("stroke", "#0084ff")
+      .attr("fill", "none")
+      .attr("d", line);
+
+  line_svg.append("g")
+    .attr("class", "x-axis-line")
+    .attr("transform", "translate(0,0)")
+    .call(d3.axisTop(xScaleLine));
+
+  line_svg.append("text")             
+  .attr("transform",
+        "translate(" + (line_width/2) + " ," + 
+                       (- 30) + ")")
+  .style("text-anchor", "middle")
+  .text("Polarity");
+
+  line_svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", (line_width / 2) - line_margin.left + 10)
+      .attr("x",0 - (line_height / 2))
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text("Paragraph #");
 }

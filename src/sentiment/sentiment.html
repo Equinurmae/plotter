@@ -31,34 +31,56 @@
         <span class="ms-Button-label">Refresh</span> 
       </button><br><br>
 
-      <p>Select a piece of text and we'll calculate sentiment information from it!</p>
+      <p id="debug"></p>
 
-      <div class="ms-MessageBar ms-MessageBar--error">
-        <div class="ms-MessageBar-content">
-          <div class="ms-MessageBar-icon">
-            <i class="ms-Icon ms-Icon--Completed"></i>
-          </div>
-          <div class="ms-MessageBar-text">
-            The polarity of this text is <span style="font-weight: 700">71% negative</span>.
-          </div>
-        </div>
-      </div>
+      <div class="ms-Pivot">
+        <ul class="ms-Pivot-links">
+          <li class="ms-Pivot-link is-selected" data-content="total" title="Total" tabindex="1">
+            Total
+          </li>
+          <li class="ms-Pivot-link " data-content="change" title="Change" tabindex="1">
+            Change
+          </li>
+        </ul>
 
-      <!-- Create a div where the graph will take place -->
-      <div id="sentiment_vis"></div>
+        <div class="ms-Pivot-content" data-content="total">
 
-      <div class="ms-MessageBar" style="width: 100%">
-        <div class="ms-MessageBar-content">
-          <div class="ms-MessageBar-icon">
-            <i class="ms-Icon ms-Icon--Info"></i>
+          <p>Select a piece of text and we'll calculate sentiment information from it!</p>
+
+          <div id="polarity"></div>
+
+          <!-- Create a div where the graph will take place -->
+          <div id="sentiment_vis"></div>
+
+          <div class="ms-MessageBar" style="width: 100%">
+            <div class="ms-MessageBar-content">
+              <div class="ms-MessageBar-icon">
+                <i class="ms-Icon ms-Icon--Info"></i>
+              </div>
+              <div class="ms-MessageBar-text">
+                It seems <span style="font-weight: 700">sadness</span> is the strongest emotion in this text.
+              </div>
+            </div>
           </div>
-          <div class="ms-MessageBar-text">
-            It seems <span style="font-weight: 700">sadness</span> is the strongest emotion in this text.
-          </div>
-        </div>
-      </div>
+        </div> 
+
+        <div class="ms-Pivot-content" data-content="change">
+          <div id="line_chart_vis"></div>
+        </div> 
 
     </main>
+
+    <script>
+      var PivotElements = document.querySelectorAll(".ms-Pivot");
+      for (var i = 0; i < PivotElements.length; i++) {
+        new fabric['Pivot'](PivotElements[i]);
+      }
+
+      var DropdownHTMLElements = document.querySelectorAll('.ms-Dropdown');
+      for (var i = 0; i < DropdownHTMLElements.length; ++i) {
+        var Dropdown = new fabric['Dropdown'](DropdownHTMLElements[i]);
+      }
+    </script>
 
 </body>
 
