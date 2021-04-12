@@ -10,22 +10,44 @@ nlp.extend(sentences);
 
 /* global document, Office, Word */
 
+var messageQueue = [];
+
+var data = {characters: 0, words: 0, sentences: 0, syllables: 0, hardWords: 0};
+
 const worker = new Worker("metrics_worker.js");
 
 worker.onmessage = function(e) {
   document.getElementById("debug").innerHTML = "Message received.";
 
-  document.getElementById("character-count").innerHTML = e.data.characters;
-  document.getElementById("word-count").innerHTML = e.data.words;
-  document.getElementById("sentence-count").innerHTML = e.data.sentences;
+  data.characters += e.data.characters;
+  data.words += e.data.words;
+  data.sentences += e.data.sentences;
+  data.syllables += e.data.syllables;
+  data.hardWords += e.data.hardWords;
 
-  document.getElementById("ari").innerHTML = e.data.ari.toFixed(2);
-  document.getElementById("fkr").innerHTML = e.data.fkr.toFixed(2);
-  document.getElementById("gunning").innerHTML = e.data.gunning.toFixed(2);
+  if(messageQueue.length > 0) { 
+    worker.postMessage({"text": messageQueue.pop()});
+  } else {
+    data.hardWords = (data.hardWords / data.words) * 100;
 
-  document.getElementById("ari-grade").innerHTML = gradeToAge(Math.round(e.data.ari));
-  document.getElementById("fkr-grade").innerHTML = gradeToAge(Math.round(e.data.fkr));
-  document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(e.data.gunning));
+    data.hardWords = Math.min(Math.max(data.hardWords, 0), 1);
+
+    let ari = 4.71 * (data.characters / data.words) + 0.5 * (data.words / data.sentences) - 21.43;
+    let fkr = 0.39 * (data.words / data.sentences) + 11.8 * (data.syllables / data.words) - 15.59;
+    let gunning = 0.4 * ((data.words / data.sentences) + data.hardWords);
+
+    document.getElementById("character-count").innerHTML = data.characters.toLocaleString();
+    document.getElementById("word-count").innerHTML = data.words.toLocaleString();
+    document.getElementById("sentence-count").innerHTML = data.sentences.toLocaleString();
+  
+    document.getElementById("ari").innerHTML = ari.toFixed(2);
+    document.getElementById("fkr").innerHTML = fkr.toFixed(2);
+    document.getElementById("gunning").innerHTML = gunning.toFixed(2);
+  
+    document.getElementById("ari-grade").innerHTML = gradeToAge(Math.round(ari));
+    document.getElementById("fkr-grade").innerHTML = gradeToAge(Math.round(fkr));
+    document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(gunning));
+  }
 };
 
 Office.onReady(info => {
@@ -36,7 +58,7 @@ Office.onReady(info => {
     }
 
     // Assign event handlers and other initialization logic.
-    document.getElementById("insert-paragraph").onclick = refresh;
+    document.getElementById("refresh").onclick = refresh;
 
     refresh();
 
@@ -68,19 +90,49 @@ function loading() {
 function refresh() {
   loading();
 
+  data = {characters: 0, words: 0, sentences: 0, syllables: 0, hardWords: 0};
+
   Word.run(function (context) {
     let paragraphs = context.document.body.paragraphs;
     paragraphs.load("text");
 
-    let body = context.document.body;
-    body.load("text");
+    var selection = context.document.getSelection();
+
+    selection.load("text");
+
+    selection.paragraphs.load("text");
 
     return context.sync()
       .then(function() {
         document.getElementById("debug").innerHTML = "Message sending...";
-        worker.postMessage({"text": body.text});
+        
+        if(selection.text.length == 0) {
+          document.getElementById("paragraph-count").innerHTML = paragraphs.items.length.toLocaleString();
+          messageQueue = paragraphs.items.map(paragraph => paragraph.text);
+        } else {
+          document.getElementById("paragraph-count").innerHTML = selection.paragraphs.items.length.toLocaleString();
+          let results = selection.paragraphs.items.map(paragraph => paragraph.text);
+
+          if(results.length > 1) {
+            let wholeText = results.join('\r');
+            let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
+
+            if(match != null) {
+              let firstParagraphMatch = new RegExp(match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(results[0]);
+              results[0] = firstParagraphMatch[1];
+
+              let lastParagraphMatch = new RegExp('(.*)' + match[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g').exec(results[results.length-1]);
+              results[results-1] = lastParagraphMatch[1];
+            }
+          } else {
+            results[0] = selection.text;
+          }
+
+          messageQueue = results;
+        }
+        
+        worker.postMessage({"text": messageQueue.pop()});
         document.getElementById("debug").innerHTML = "Message sent.";
-        document.getElementById("paragraph-count").innerHTML = paragraphs.items.length.toLocaleString();
       })
       .then(context.sync);
   })

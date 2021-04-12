@@ -34,79 +34,77 @@
         <h2 class="ms-font-xl">Please sideload your add-in to see app body.</h2>
     </section>
     <main id="app-body" class="ms-welcome__main" style="display: none;">
-      <button class="ms-Button ms-Button--primary" id="insert-paragraph">
+      <button class="ms-Button ms-Button--primary" id="refresh">
         <span class="ms-Button-label">Refresh</span> 
-      </button><br><br>
+      </button>
 
-      <p id="debug"></p>
+      <p id="debug" style="display: none"></p>
 
-        <table class="ms-Table" style="width: 100%">
-            <tr>
-                <td>Paragraphs</td>
-                <td><span id="paragraph-count"></span></td>
-            </tr>
-        </table><br><br>
+      <p class="ms-font-s" style="text-align: justify">Our <span style="font-weight: 700">pacing score</span> is calculated as a moving average of the readability over paragraphs. 
+        It works best over individual chapters or scenes, so <span style="font-weight: 700">select a piece of text</span> and get started with the options below!</p>
 
-        <div class="ms-Grid" dir="ltr">
-          <div class="ms-Grid-row">
-            <div class="ms-Grid-col ms-sm6 ms-md6 ms-lg6">
-              <div class="ms-Toggle">
-                <span class="ms-Toggle-description">Readability</span> 
-                <input type="checkbox" id="readability" class="ms-Toggle-input" />
-                <label for="readability" class="ms-Toggle-field is-selected" tabindex="0">
-                  <!-- <span class="ms-Label ms-Label--off">Hide</span> 
-                  <span class="ms-Label ms-Label--on">Show</span>  -->
-                </label>
-              </div>
+      <h2 class="ms-font-xl">Graph Options</h2>
+
+      <div class="ms-Grid" dir="ltr">
+        <div class="ms-Grid-row">
+
+          <div class="ms-Grid-col ms-sm6 ms-md6 ms-lg6">
+            <div class="ms-Toggle">
+              <span class="ms-Toggle-description">Readability</span> 
+              <input type="checkbox" id="readability" class="ms-Toggle-input" checked />
+              <label for="readability" class="ms-Toggle-field is-selected" tabindex="0">
+                <!-- <span class="ms-Label ms-Label--off">Hide</span> 
+                <span class="ms-Label ms-Label--on">Show</span>  -->
+              </label>
             </div>
-            
-            <div class="ms-Grid-col ms-sm6 ms-md6 ms-lg6">
-              <div class="ms-Toggle">
-                <span class="ms-Toggle-description">Words</span> 
-                <input type="checkbox" id="words" class="ms-Toggle-input" />
-                <label for="words" class="ms-Toggle-field is-selected" tabindex="0">
-                  <!-- <span class="ms-Label ms-Label--off">Hide</span> 
-                  <span class="ms-Label ms-Label--on">Show</span>  -->
-                </label>
-              </div>
+          </div>
+          
+          <div class="ms-Grid-col ms-sm6 ms-md6 ms-lg6">
+            <div class="ms-Toggle">
+              <span class="ms-Toggle-description">Words</span> 
+              <input type="checkbox" id="words" class="ms-Toggle-input" checked />
+              <label for="words" class="ms-Toggle-field is-selected" tabindex="0">
+                <!-- <span class="ms-Label ms-Label--off">Hide</span> 
+                <span class="ms-Label ms-Label--on">Show</span>  -->
+              </label>
             </div>
           </div>
 
-          <div class="ms-Grid-row">
-            <div class="ms-Grid-col ms-sm6 ms-md6 ms-lg6">
-              <div class="ms-Toggle">
-                <span class="ms-Toggle-description">Average</span> 
-                <input type="checkbox" id="average" class="ms-Toggle-input" />
-                <label for="average" class="ms-Toggle-field is-selected" tabindex="0">
-                  <!-- <span class="ms-Label ms-Label--off">Hide</span> 
-                  <span class="ms-Label ms-Label--on">Show</span>  -->
-                </label>
-              </div>
-            </div>
-            
-            <div class="ms-Grid-col ms-sm6 ms-md6 ms-lg6">
-              <div class="ms-Toggle">
-                <span class="ms-Toggle-description">Z-Scores</span> 
-                <input type="checkbox" id="z-scores" class="ms-Toggle-input" />
-                <label for="z-scores" class="ms-Toggle-field" tabindex="0">
-                  <!-- <span class="ms-Label ms-Label--off">Hide</span> 
-                  <span class="ms-Label ms-Label--on">Show</span>  -->
-                </label>
-              </div>
+          <div class="ms-Grid-col ms-sm6 ms-md6 ms-lg6">
+            <div class="ms-Toggle">
+              <span class="ms-Toggle-description">Average</span> 
+              <input type="checkbox" id="average" class="ms-Toggle-input" checked />
+              <label for="average" class="ms-Toggle-field is-selected" tabindex="0">
+                <!-- <span class="ms-Label ms-Label--off">Hide</span> 
+                <span class="ms-Label ms-Label--on">Show</span>  -->
+              </label>
             </div>
           </div>
+          
+          <div class="ms-Grid-col ms-sm6 ms-md6 ms-lg6">
+            <div class="ms-Toggle">
+              <span class="ms-Toggle-description">Z-Scores</span> 
+              <input type="checkbox" id="z-scores" class="ms-Toggle-input" />
+              <label for="z-scores" class="ms-Toggle-field" tabindex="0">
+                <!-- <span class="ms-Label ms-Label--off">Hide</span> 
+                <span class="ms-Label ms-Label--on">Show</span>  -->
+              </label>
+            </div>
+          </div>
+
         </div>
+      </div>
 
-        <div class="ms-Range">
-          <span class="ms-Range-description">Detail</span>
-          <input type="range" min="0" max="500" class="ms-Range-input" id="detail" />
-        </div>
+      <div class="ms-Range" style="display: none">
+        <span class="ms-Range-description">Detail</span>
+        <input type="range" min="0" max="500" class="ms-Range-input" id="detail" />
+      </div>
 
-        <!-- <input class="ms-Slider" type="range" min="0" max="500" class="slider" id="detail"> -->
-        <p id="detail_label"></p>
+      <!-- <input class="ms-Slider" type="range" min="0" max="500" class="slider" id="detail"> -->
+      <p id="detail_label"></p>
 
-        <!-- Create a div where the graph will take place -->
-        <div id="pacing_vis"></div>
+      <!-- Create a div where the graph will take place -->
+      <div id="pacing_vis"></div>
     </main>
 
     <script type="text/javascript">

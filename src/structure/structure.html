@@ -34,23 +34,11 @@
         <h2 class="ms-font-xl">Please sideload your add-in to see app body.</h2>
     </section>
     <main id="app-body" class="ms-welcome__main" style="display: none;">
-      <p id="debug"></p>
+      <p id="debug" style="display: none"></p>
 
-      <button class="ms-Button ms-Button--primary" id="insert-paragraph">
+      <button class="ms-Button ms-Button--primary" id="refresh">
         <span class="ms-Button-label">Refresh</span> 
-      </button><br><br>
-
-      <table class="ms-Table" style="width: 100%">
-          <tr>
-              <td>Words</td>
-              <td><span id="word-count"></span></td>
-          </tr>
-      </table><br><br>
-
-      <div class="ms-TextField ms-TextField--underlined">
-        <label class="ms-Label">Target Words</label>
-        <input id="target" class="ms-TextField-field" type="text" value="" placeholder="100000">
-      </div><br><br>
+      </button><br>
 
       <div class="ms-Dropdown" tabindex="0">
         <label class="ms-Label">Story Structure</label>
@@ -60,10 +48,14 @@
           <option value="four-act">Four-act Structure</option>
           <option value="save-the-cat">Save the Cat</option>
         </select>
-      </div>
+      </div><br>
 
-      <div class="ms-fontSize-28" id="structure-table">
-      </div>
+      <div class="ms-TextField ms-TextField--underlined">
+        <label class="ms-Label">Target Words</label>
+        <input id="target" class="ms-TextField-field" type="text" value="" placeholder="100000">
+      </div><br>
+
+      <div class="ms-fontSize-28" id="structure-table"></div>
         
     </main>
 

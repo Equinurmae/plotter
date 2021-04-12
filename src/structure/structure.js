@@ -5,17 +5,24 @@ import "../../assets/icon-80.png";
 
 import nlp from "compromise";
 
-let target = 100000;
+var words = 0;
+var target = 100000;
 
 /* global document, Office, Word */
+
+var messageQueue = [];
 
 const worker = new Worker("structure_worker.js");
 
 worker.onmessage = function(e) {
   document.getElementById("debug").innerHTML = "Message received.";
-  var words = e.data.words;
-  document.getElementById("word-count").innerHTML = words.toLocaleString();
-  displayStructure(words);
+  words += e.data.words;
+
+  if(messageQueue.length > 0) { 
+    worker.postMessage({"text": messageQueue.pop()});
+  } else {
+    displayStructure(words);
+  }
 };
 
 Office.onReady(info => {
@@ -26,7 +33,7 @@ Office.onReady(info => {
     }
 
     // Assign event handlers and other initialization logic.
-    document.getElementById("insert-paragraph").onclick = refresh;
+    document.getElementById("refresh").onclick = refresh;
     document.getElementById("structure").onchange = refresh;
     document.getElementById("target").onchange = onTarget;
 
@@ -43,7 +50,6 @@ function onTarget() {
 }
 
 function loading() {
-  document.getElementById("word-count").innerHTML = `<div class="ms-Spinner"></div>`;
   document.getElementById("structure-table").innerHTML = `<div class="ms-Spinner"></div>`;
 
   var SpinnerElements = document.querySelectorAll(".ms-Spinner");
@@ -53,19 +59,51 @@ function loading() {
 }
 
 function refresh() {
-  worker.postMessage("Hello world!");
+  words = 0;
+
   loading();
 
   Word.run(function (context) {
-      let body = context.document.body;
-      body.load("text");
+    let paragraphs = context.document.body.paragraphs;
+    paragraphs.load("text");
 
-      return context.sync()
-        .then(function() {
-          worker.postMessage({"text": body.text});
-          document.getElementById("debug").innerHTML = "Message sent.";
-        })
-        .then(context.sync);
+    var selection = context.document.getSelection();
+
+    selection.load("text");
+
+    selection.paragraphs.load("text");
+
+    return context.sync()
+      .then(function() {
+        document.getElementById("debug").innerHTML = "Message sending...";
+        
+        if(selection.text.length == 0) {
+          messageQueue = paragraphs.items.map(paragraph => paragraph.text);
+        } else {
+          let results = selection.paragraphs.items.map(paragraph => paragraph.text);
+
+          if(results.length > 1) {
+            let wholeText = results.join('\r');
+            let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
+
+            if(match != null) {
+              let firstParagraphMatch = new RegExp(match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(results[0]);
+              results[0] = firstParagraphMatch[1];
+
+              let lastParagraphMatch = new RegExp('(.*)' + match[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g').exec(results[results.length-1]);
+              results[results-1] = lastParagraphMatch[1];
+            }
+          } else {
+            results[0] = selection.text;
+          }
+
+          messageQueue = results;
+        }
+        
+        worker.postMessage({"text": messageQueue.pop()});
+        document.getElementById("debug").innerHTML = "Message sent.";
+      })
+      .then(context.sync);
   })
   .catch(function (error) {
       console.log("Error: " + error);

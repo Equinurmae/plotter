@@ -11,6 +11,25 @@ const d3 = require("d3");
 
 var options = {"readability": true, "words": true, "average": true, "z-scores": false, "detail": 100};
 
+var data = [];
+
+var messageQueue = [];
+
+const worker = new Worker("pacing_worker.js");
+
+worker.onmessage = function(e) {
+  document.getElementById("debug").innerHTML = "Message received.";
+
+  data.push(e.data);
+
+  if(messageQueue.length > 0) { 
+    worker.postMessage({"text": messageQueue.pop()});
+  } else {
+    data.reverse();
+    draw_chart();
+  }
+};
+
 /* global document, Office, Word */
 
 Office.onReady(info => {
@@ -23,7 +42,7 @@ Office.onReady(info => {
     // Assign event handlers and other initialization logic.
     document.getElementById("detail").value = options.detail;
 
-    document.getElementById("insert-paragraph").onclick = refresh;
+    document.getElementById("refresh").onclick = refresh;
     document.getElementById("readability").onchange = onReadability;
     document.getElementById("words").onchange = onWords;
     document.getElementById("average").onchange = onAverage;
@@ -38,22 +57,22 @@ Office.onReady(info => {
 });
 
 function onReadability() {
-  options.readability = !options.readability;
+  options.readability = document.getElementById("readability").checked;
   refresh();
 }
 
 function onWords() {
-  options.words = !options.words;
+  options.words = document.getElementById("words").checked;
   refresh();
 }
 
 function onAverage() {
-  options.average = !options.average;
+  options.average = document.getElementById("average").checked;
   refresh();
 }
 
 function onZ() {
-  options["z-scores"] = !options["z-scores"];
+  options["z-scores"] = document.getElementById("z-scores").checked;
   refresh();
 }
 
@@ -64,18 +83,49 @@ function onDetail() {
 }
 
 function refresh(first = false) {
+  data = [];
+
   Word.run(function (context) {
-      let paragraphs = context.document.body.paragraphs;
-      paragraphs.load("text");
+    let paragraphs = context.document.body.paragraphs;
+    paragraphs.load("text");
 
-      return context.sync()
-        .then(function() {
-          document.getElementById("paragraph-count").innerHTML = paragraphs.items.length.toLocaleString();
-          if(first) document.getElementById("detail").value = Math.ceil(paragraphs.items.length * 0.75);
+    var selection = context.document.getSelection();
 
-          draw_chart(paragraphs);
-        })
-        .then(context.sync);
+    selection.load("text");
+
+    selection.paragraphs.load("text");
+
+    return context.sync()
+      .then(function() {
+        document.getElementById("debug").innerHTML = "Message sending...";
+        
+        if(selection.text.length == 0) {
+          messageQueue = paragraphs.items.map(paragraph => paragraph.text);
+        } else {
+          let results = selection.paragraphs.items.map(paragraph => paragraph.text);
+
+          if(results.length > 1) {
+            let wholeText = results.join('\r');
+            let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
+
+            if(match != null) {
+              let firstParagraphMatch = new RegExp(match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(results[0]);
+              results[0] = firstParagraphMatch[1];
+
+              let lastParagraphMatch = new RegExp('(.*)' + match[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g').exec(results[results.length-1]);
+              results[results-1] = lastParagraphMatch[1];
+            }
+          } else {
+            results[0] = selection.text;
+          }
+
+          messageQueue = results;
+        }
+        
+        worker.postMessage({"text": messageQueue.pop()});
+        document.getElementById("debug").innerHTML = "Message sent.";
+      })
+      .then(context.sync);
   })
   .catch(function (error) {
       console.log("Error: " + error);
@@ -85,211 +135,125 @@ function refresh(first = false) {
   });
 }
 
-function getWordCount(text) {
-  let strip_punctuation = text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()"?“”]/g," ");
-  let words = strip_punctuation.trim().split(/\s+/g);
-  return words.length;
-}
-
-function findSyllables(word) {
-  word = word.toLowerCase();                                     
-  word = word.replace(/(?:[^laeiouy]|ed|[^laeiouy]e)$/, '');   
-  word = word.replace(/^y/, '');                                 
-  //return word.match(/[aeiouy]{1,2}/g).length;   
-  var syl = word.match(/[aeiouy]{1,2}/g);
-  if(syl)
-  {
-      return syl.length;
-  }
-  else return 1;
-}
-
-function getReadability(text) {
-  let strip_punctuation = text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()"?“”]/g," ");
-  let words = strip_punctuation.trim().split(/\s+/g);
-
-  let syllableList = words.map(word => findSyllables(word));
-  let hardWords = (syllableList.filter(x => x > 2).length / words.length) * 100;
-
-  let sentences = text.match(/\w[.?!](\s|$|”)/g);
-
-  hardWords = Math.min(Math.max(hardWords, 0), 1);
-
-  return 0.4 * ((words.length / (sentences == null ? 1 : sentences.length)) + hardWords);
-}
-
 function movingAverage(data, width) {
   return Array.from(ma(data, width));
 }
 
-function exponentialMovingAverage(data, width) {
-  return Array.from(sma(data, width));
-}
-
-function calculateCI(point, mean, deviation, n) {
-  let z = (point - mean) / deviation;
-  return {"upper": mean + (z * (deviation / Math.sqrt(n)) ), "lower": mean - (z * (deviation / Math.sqrt(n)) )};
-}
-
 function z(point, mean, deviation) {
-  return Math.abs((point - mean) / deviation);
+  return Math.abs((point.readability - mean) / deviation);
 }
 
-function draw_chart(paragraphs) {
+function draw_chart() {
   var margin = {top: 50, right: 50, bottom: 50, left: 60}
-  , width = window.innerWidth - margin.left - margin.right // Use the window's width 
-  , height = window.innerHeight - margin.top - margin.bottom; // Use the window's height
-
-  let data = paragraphs.items.map(paragraph => getReadability(paragraph.text));
-
-  let words = paragraphs.items.map(paragraph => getWordCount(paragraph.text));
+  , width = window.innerWidth - margin.left - margin.right
+  , height = window.innerHeight - margin.top - margin.bottom;
 
   document.getElementById("detail").min = 2;
   document.getElementById("detail").max = data.length - 2;
-  let averages = movingAverage(data, options.detail);
-  let emas = exponentialMovingAverage(data, options.detail);
 
-  let mean = d3.mean(data);
-  let deviation = d3.deviation(data);
+  let averages = movingAverage(data.map(x => x.readability), Math.ceil(data.length * 0.15));
+
+  let mean = d3.mean(data.map(x => x.readability));
+  let deviation = d3.deviation(data.map(x => x.readability));
 
   let zs = data.map(d => z(d, mean, deviation));
 
-  // let confidence_interval = data.map(d => calculateCI(d, d3.mean(data), d3.deviation(data), data.length));
+  var xScaleReadability = d3.scaleLinear()
+    .domain([0, d3.max(data.map(x => x.readability))])
+    .range([0, width]);
 
-// 5. X scale will use the index of our data
-var xScale = d3.scaleLinear()
-    .domain([0, d3.max(data)]) // input
-    .range([0, width]); // output
+  var axisScale = d3.scaleOrdinal()
+    .domain(["fast", "average", "slow"])
+    .range([0, width/2, width]);;
 
-var axisScale = d3.scaleOrdinal()
-  .domain(["fast", "average", "slow"])
-  .range([0, width/2, width]);;
+  var xScaleWords = d3.scaleLinear()
+    .domain([0, d3.max(data.map(x => x.words))])
+    .range([0, width]);
 
-    // 5. X scale will use the index of our data
-var xWordScale = d3.scaleLinear()
-.domain([0, d3.max(words)]) // input
-.range([0, width]); // output
+  var xScaleZ = d3.scaleLinear()
+    .domain([0, d3.max(zs)])
+    .range([0, width]);
 
-    // 5. X scale will use the index of our data
-    var xZScale = d3.scaleLinear()
-    .domain([0, d3.max(zs)]) // input
-    .range([0, width]); // output
+  var yScale = d3.scaleLinear()
+    .domain([data.length-1,0])
+    .range([height, 0]);
 
-// 6. Y scale will use the randomly generate number 
-var yScale = d3.scaleLinear()
-    .domain([data.length-1,0]) // input 
-    .range([height, 0]); // output 
-
-// 7. d3's line generator
-var line = d3.line()
-    .x(function(d) { return xScale(d.y); }) // set the x values for the line generator
-    .y(function(d, i) { return yScale(i); }) // set the y values for the line generator 
+  var readabilityLine = d3.line()
+    .x(function(d) { return xScaleReadability(d.readability); })
+    .y(function(d, i) { return yScale(i); })
     .curve(d3.curveBasis)
-    .defined(d => d.y != undefined); // apply smoothing to the line
+    .defined(d => d.readability != undefined);
 
-// var area = d3.area()
-//   .x0(function(d) { return xScale(d.lower); }) // set the x values for the line generator
-//   .x1(function(d) { return xScale(d.upper); })
-//   .y(function(d, i) { return yScale(i); }); // apply smoothing to the line
+  var averageLine = d3.line()
+    .x(function(d) { return xScaleReadability(d); })
+    .y(function(d, i) { return yScale(i); })
+    .curve(d3.curveBasis)
+    .defined(d => d != undefined);
 
-var wordLine = d3.line()
-  .x(function(d) { return xWordScale(d.y); }) // set the x values for the line generator
-  .y(function(d, i) { return yScale(i); }) // set the y values for the line generator 
-  .curve(d3.curveMonotoneX)
-  .defined(d => d.y != undefined); // apply smoothing to the line
+  var wordLine = d3.line()
+    .x(function(d) { return xScaleWords(d.words); })
+    .y(function(d, i) { return yScale(i); })
+    .curve(d3.curveMonotoneX)
+    .defined(d => d.words != undefined);
 
   var zLine = d3.line()
-  .x(function(d) { return xZScale(d.y); }) // set the x values for the line generator
-  .y(function(d, i) { return yScale(i); }) // set the y values for the line generator 
-  .curve(d3.curveBasis)
-  .defined(d => d.y != undefined); // apply smoothing to the line
+    .x(function(d) { return xScaleZ(d); })
+    .y(function(d, i) { return yScale(i); })
+    .curve(d3.curveBasis)
+    .defined(d => d != undefined);
 
+  d3.select("svg").remove();
 
-// 8. An array of objects of length N. Each object has key -> value pair, the key being "y" and the value is a random number
-var dataset = data.map(function(d) { return {"y": d } });
-
-var wordDataset = words.map(function(d) { return {"y": d } });
-
-var zDataset = zs.map(function(d) { return {"y": d } });
-
-var averageDataset = averages.map(function(d) { return {"y": d } });
-
-var emaDataset = emas.map(function(d) { return {"y": d } });
-
-// 1. Add the SVG to the page and employ #2
-d3.select("svg").remove();
-var svg = d3.select("#pacing_vis").append("svg")
+  var svg = d3.select("#pacing_vis").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-// 4. Call the y axis in a group tag
-svg.append("g")
+  svg.append("g")
     .attr("class", "y axis")
-    .call(d3.axisLeft(yScale)); // Create an axis component with d3.axisLeft
+    .call(d3.axisLeft(yScale));
 
-if(options.words) {
-  // 9. Append the path, bind the data, and call the line generator 
-svg.append("path")
-.datum(wordDataset) // 10. Binds data to the line 
-.attr("class", "wordLine") // Assign a class for styling 
-.attr("d", wordLine); // 11. Calls the line generator 
-}
-
-if(options.readability) {
-// 9. Append the path, bind the data, and call the line generator 
-svg.append("path")
-    .datum(dataset) // 10. Binds data to the line 
-    .attr("class", "line") // Assign a class for styling
-    .attr("d", line); // 11. Calls the line generator 
-}
-
-if(options["z-scores"]) {
-  svg.append("path")
-  .datum(zDataset) // 10. Binds data to the line 
-  .attr("class", "lineZ") // Assign a class for styling 
-  .attr("d", zLine); // 11. Calls the line generator 
-}
-
-if(options.average) {
-
-
-
-  // 9. Append the path, bind the data, and call the line generator 
-  svg.append("path")
-  .datum(averageDataset) // 10. Binds data to the line 
-  .attr("class", "lineAverage") // Assign a class for styling 
-  .attr("d", line); // 11. Calls the line generator 
-
-  // svg.append("path")
-  // .datum(emaDataset) // 10. Binds data to the line 
-  // .attr("class", "ema") // Assign a class for styling 
-  // .attr("d", line); // 11. Calls the line generator 
+  if(options.words) {
+    svg.append("path")
+      .datum(data)
+      .attr("class", "wordLine")
+      .attr("d", wordLine);
   }
 
+  if(options.readability) {
+    svg.append("path")
+      .datum(data)
+      .attr("class", "line")
+      .attr("d", readabilityLine);
+  }
 
-// svg.append("path")
-//       .datum(confidence_interval)
-//       .attr("fill", "green")
-//       .attr("stroke", "none")
-//       .attr("d", area);
+  if(options["z-scores"]) {
+    svg.append("path")
+      .datum(zs)
+      .attr("class", "lineZ")
+      .attr("d", zLine);
+  }
 
-// 3. Call the x axis in a group tag
-svg.append("g")
+  if(options.average) {
+    svg.append("path")
+      .datum(averages)
+      .attr("class", "lineAverage")
+      .attr("d", averageLine);
+  }
+
+  svg.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0,0)")
-    .call(d3.axisTop(axisScale)); // Create an axis component with d3.axisBottom
+    .call(d3.axisTop(axisScale));
 
-    // text label for the x axis
   svg.append("text")             
-  .attr("transform",
+    .attr("transform",
         "translate(" + (width/2) + " ," + 
                        (- 30) + ")")
-  .style("text-anchor", "middle")
-  .text("Pacing");
+    .style("text-anchor", "middle")
+    .text("Pacing");
 
-  // text label for the y axis
   svg.append("text")
       .attr("transform", "rotate(-90)")
       .attr("y", 0 - margin.left + 10)
