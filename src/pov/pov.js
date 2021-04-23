@@ -11,6 +11,8 @@ const worker = new Worker("pov_worker.js");
 
 var pronoun_data = {"1st": 0, "2nd": 0, "3rd": 0};
 
+var entities = [];
+
 var lineChartData = [];
 
 worker.onmessage = function(e) {
@@ -18,6 +20,8 @@ worker.onmessage = function(e) {
 
   updatePronounData(e.data.pronouns);
   lineChartData.push(e.data.pronouns);
+
+  entities = entities.concat(e.data.entities);
 
   redrawPieChart(messageQueue.length == 0);
 
@@ -28,8 +32,33 @@ worker.onmessage = function(e) {
 
     lineChartData.reverse();
     drawLineChart("3rd");
+
+    document.getElementById("entity").innerHTML = mode(entities);
   }
 };
+
+// from https://stackoverflow.com/questions/1053843/get-the-element-with-the-highest-occurrence-in-an-array
+function mode(array)
+{
+    if(array.length == 0)
+        return null;
+    var modeMap = {};
+    var maxEl = array[0], maxCount = 1;
+    for(var i = 0; i < array.length; i++)
+    {
+        var el = array[i];
+        if(modeMap[el] == null)
+            modeMap[el] = 1;
+        else
+            modeMap[el]++;  
+        if(modeMap[el] > maxCount)
+        {
+            maxEl = el;
+            maxCount = modeMap[el];
+        }
+    }
+    return maxEl;
+}
 
 var margin = {top: 30, right: 30, bottom: 30, left: 30}
 , width = window.innerWidth - margin.left - margin.right
