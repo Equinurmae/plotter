@@ -214,7 +214,7 @@ function getWordTypeInfo(index, words, tolerance, name) {
   let percentage = barChartData[index].count / words;
 
   document.getElementById("notifications").innerHTML += `
-    <div class="ms-MessageBar ms-MessageBar--` + (percentage <= tolerance ? `success` : `warning`) + `" style="width: 100%">
+    <div class="ms-MessageBar ms-MessageBar--` + (percentage <= tolerance ? `success` : `warning`) + `">
       <div class="ms-MessageBar-content">
         <div class="ms-MessageBar-icon">
           <i class="ms-Icon ms-Icon--` + (percentage <= tolerance ? `Completed` : `Info`) + `"></i>

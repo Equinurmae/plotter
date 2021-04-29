@@ -53,8 +53,6 @@
               <span class="ms-Toggle-description">Readability</span> 
               <input type="checkbox" id="readability" class="ms-Toggle-input" checked />
               <label for="readability" class="ms-Toggle-field is-selected" tabindex="0">
-                <!-- <span class="ms-Label ms-Label--off">Hide</span> 
-                <span class="ms-Label ms-Label--on">Show</span>  -->
               </label>
             </div>
           </div>
@@ -64,8 +62,6 @@
               <span class="ms-Toggle-description">Words</span> 
               <input type="checkbox" id="words" class="ms-Toggle-input" checked />
               <label for="words" class="ms-Toggle-field is-selected" tabindex="0">
-                <!-- <span class="ms-Label ms-Label--off">Hide</span> 
-                <span class="ms-Label ms-Label--on">Show</span>  -->
               </label>
             </div>
           </div>
@@ -75,8 +71,6 @@
               <span class="ms-Toggle-description">Average</span> 
               <input type="checkbox" id="average" class="ms-Toggle-input" checked />
               <label for="average" class="ms-Toggle-field is-selected" tabindex="0">
-                <!-- <span class="ms-Label ms-Label--off">Hide</span> 
-                <span class="ms-Label ms-Label--on">Show</span>  -->
               </label>
             </div>
           </div>
@@ -86,8 +80,6 @@
               <span class="ms-Toggle-description">Z-Scores</span> 
               <input type="checkbox" id="z-scores" class="ms-Toggle-input" />
               <label for="z-scores" class="ms-Toggle-field" tabindex="0">
-                <!-- <span class="ms-Label ms-Label--off">Hide</span> 
-                <span class="ms-Label ms-Label--on">Show</span>  -->
               </label>
             </div>
           </div>
@@ -100,10 +92,6 @@
         <input type="range" min="0" max="500" class="ms-Range-input" id="detail" />
       </div>
 
-      <!-- <input class="ms-Slider" type="range" min="0" max="500" class="slider" id="detail"> -->
-      <p id="detail_label"></p>
-
-      <!-- Create a div where the graph will take place -->
       <div id="pacing_vis"></div>
     </main>
 
@@ -111,6 +99,11 @@
       var ToggleElements = document.querySelectorAll(".ms-Toggle");
       for (var i = 0; i < ToggleElements.length; i++) {
         new fabric['Toggle'](ToggleElements[i]);
+      }
+
+      var SpinnerElements = document.querySelectorAll(".ms-Spinner");
+      for (var i = 0; i < SpinnerElements.length; i++) {
+        new fabric['Spinner'](SpinnerElements[i]);
       }
     </script>
 

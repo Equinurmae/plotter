@@ -29,33 +29,32 @@
     <main id="app-body" class="ms-welcome__main" style="display: none;">
       <button class="ms-Button ms-Button--primary" id="refresh">
         <span class="ms-Button-label">Refresh</span> 
-      </button><br><br>
+      </button>
 
-      <p id="debug"></p>
-      <p id="test"></p>
+      <p id="debug" style="display: none;"></p>
 
-      <div class="ms-Pivot">
+      <p class="ms-fontSize-s" style="margin-bottom: 0; text-align: justify">Select a piece of text and we'll count the <span style="font-weight: 700">parts of speech</span> in it! 
+      Switch to the <span style="font-weight: 700">change</span> tab to see how each part of speech varies throughout the text.</p>
+
+      <div class="ms-Pivot" style="width: 100%">
         <ul class="ms-Pivot-links">
           <li class="ms-Pivot-link is-selected" data-content="total" title="Total" tabindex="1">
             Total
           </li>
-          <li class="ms-Pivot-link " data-content="change" title="Change" tabindex="1">
+          <li class="ms-Pivot-link" data-content="change" title="Change" tabindex="1">
             Change
           </li>
         </ul>
         <div class="ms-Pivot-content" data-content="total">
-          <p>Select a piece of text and we'll count the parts of speech in it!</p>
 
           <div id="active-passive"></div>
-
-            <!-- Create a div where the graph will take place -->
-            <div id="pos_vis"></div>
+            
+          <!-- Create a div where the graph will take place -->
+          <div id="pos_vis"></div>
 
           <div id="notifications"></div>
         </div>
         <div class="ms-Pivot-content" data-content="change">
-          <p>Select a piece of text and we'll show how the parts of speech in it change over time!</p>
-
           <div class="ms-Dropdown">
             <label class="ms-Label">Part of Speech</label>
             <i class="ms-Dropdown-caretDown ms-Icon ms-Icon--ChevronDown"></i>

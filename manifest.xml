@@ -54,22 +54,6 @@
                     <SourceLocation resid="Metrics.Url"/>
                   </Action>
                 </Control>
-                <Control xsi:type="Button" id="PacingButton">
-                  <Label resid="PacingButton.Label"/>
-                  <Supertip>
-                    <Title resid="PacingButton.Label"/>
-                    <Description resid="PacingButton.Tooltip"/>
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.Pacing.16x16"/>
-                    <bt:Image size="32" resid="Icon.Pacing.32x32"/>
-                    <bt:Image size="80" resid="Icon.Pacing.80x80"/>
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>ButtonId1</TaskpaneId>
-                    <SourceLocation resid="Pacing.Url"/>
-                  </Action>
-                </Control>
                 <Control xsi:type="Button" id="StructureButton">
                   <Label resid="StructureButton.Label"/>
                   <Supertip>
@@ -84,6 +68,22 @@
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>ButtonId1</TaskpaneId>
                     <SourceLocation resid="Structure.Url"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="PacingButton">
+                  <Label resid="PacingButton.Label"/>
+                  <Supertip>
+                    <Title resid="PacingButton.Label"/>
+                    <Description resid="PacingButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.Pacing.16x16"/>
+                    <bt:Image size="32" resid="Icon.Pacing.32x32"/>
+                    <bt:Image size="80" resid="Icon.Pacing.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Pacing.Url"/>
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="PoSButton">

@@ -22,7 +22,7 @@ worker.onmessage = function(e) {
 
   data.push(e.data);
 
-  if(messageQueue.length > 0) { 
+  if(messageQueue.length > 0) {
     worker.postMessage({"text": messageQueue.pop()});
   } else {
     data.reverse();
@@ -82,7 +82,18 @@ function onDetail() {
   refresh();
 }
 
+function loading() {
+  document.getElementById("pacing_vis").innerHTML = `<div class="ms-Spinner"></div>`;
+
+  var SpinnerElements = document.querySelectorAll(".ms-Spinner");
+  for (var i = 0; i < SpinnerElements.length; i++) {
+    new fabric['Spinner'](SpinnerElements[i]);
+  }
+}
+
 function refresh(first = false) {
+  loading();
+  
   data = [];
 
   Word.run(function (context) {
@@ -144,22 +155,26 @@ function z(point, mean, deviation) {
 }
 
 function draw_chart() {
+  document.getElementById("pacing_vis").innerHTML = "";
+
   var margin = {top: 50, right: 50, bottom: 50, left: 60}
   , width = window.innerWidth - margin.left - margin.right
   , height = window.innerHeight - margin.top - margin.bottom;
 
+  let readability = data.map(x => isNaN(x.readability) ? 0 : x.readability);
+
   document.getElementById("detail").min = 2;
   document.getElementById("detail").max = data.length - 2;
 
-  let averages = movingAverage(data.map(x => x.readability), Math.ceil(data.length * 0.15));
+  let averages = movingAverage(readability, Math.ceil(data.length * 0.15));
 
-  let mean = d3.mean(data.map(x => x.readability));
-  let deviation = d3.deviation(data.map(x => x.readability));
+  let mean = d3.mean(readability);
+  let deviation = d3.deviation(readability);
 
   let zs = data.map(d => z(d, mean, deviation));
 
   var xScaleReadability = d3.scaleLinear()
-    .domain([0, d3.max(data.map(x => x.readability))])
+    .domain([0, d3.max(readability)])
     .range([0, width]);
 
   var axisScale = d3.scaleOrdinal()
@@ -182,7 +197,7 @@ function draw_chart() {
     .x(function(d) { return xScaleReadability(d.readability); })
     .y(function(d, i) { return yScale(i); })
     .curve(d3.curveBasis)
-    .defined(d => d.readability != undefined);
+    .defined(d => !isNaN(d.readability));
 
   var averageLine = d3.line()
     .x(function(d) { return xScaleReadability(d); })
