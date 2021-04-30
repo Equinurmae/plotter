@@ -5,6 +5,10 @@ import "../../assets/icon-80.png";
 
 const d3 = require("d3");
 
+import {
+  ma, dma, ema, sma, wma
+} from 'moving-averages';
+
 var messageQueue = [];
 
 const worker = new Worker("pov_worker.js");
@@ -28,36 +32,28 @@ worker.onmessage = function(e) {
   if(messageQueue.length > 0) {  
     worker.postMessage({"text": messageQueue.pop()});
   } else {
-    document.getElementById("guess").innerHTML = Object.entries(pronoun_data).sort((a,b) => a[1] - b[1])[2][0] + " person";
+    let dictionary = mode(entities);
+
+    addInfo(Object.entries(pronoun_data).sort((a,b) => a[1] - b[1])[2][0], dictionary);
 
     lineChartData.reverse();
-    drawLineChart("3rd");
-
-    document.getElementById("entity").innerHTML = mode(entities);
+    drawLineChart("1st");
   }
 };
 
-// from https://stackoverflow.com/questions/1053843/get-the-element-with-the-highest-occurrence-in-an-array
 function mode(array)
 {
-    if(array.length == 0)
-        return null;
-    var modeMap = {};
-    var maxEl = array[0], maxCount = 1;
-    for(var i = 0; i < array.length; i++)
-    {
-        var el = array[i];
-        if(modeMap[el] == null)
-            modeMap[el] = 1;
-        else
-            modeMap[el]++;  
-        if(modeMap[el] > maxCount)
-        {
-            maxEl = el;
-            maxCount = modeMap[el];
-        }
-    }
-    return maxEl;
+    let entities = {};
+
+    array.forEach((entity) => {
+      if(entity in entities) {
+        entities[entity] += 1;
+      } else {
+        entities[entity] = 1;
+      }
+    });
+
+    return Object.entries(entities).sort((a,b) => b[1] - a[1]);
 }
 
 var margin = {top: 30, right: 30, bottom: 30, left: 30}
@@ -111,7 +107,47 @@ function onLineKeyChange() {
   redrawLineChart(document.getElementById("line_key").value);
 }
 
+function loading() {
+  document.getElementById("summary").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("entities").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("line_chart_vis").innerHTML = `<div class="ms-Spinner"></div>`;
+
+  var SpinnerElements = document.querySelectorAll(".ms-Spinner");
+  for (var i = 0; i < SpinnerElements.length; i++) {
+    new fabric['Spinner'](SpinnerElements[i]);
+  }
+}
+
+function addInfo(person, dictionary) {
+  document.getElementById("summary").innerHTML = `
+  <div class="ms-MessageBar ms-MessageBar--success">
+    <div class="ms-MessageBar-content">
+      <div class="ms-MessageBar-icon">
+        <i class="ms-Icon ms-Icon--Completed"></i>
+      </div>
+      <div class="ms-MessageBar-text">
+        The selected text is most likely in <span style="font-weight: 700">` + person + ` person</span>, with <span style="font-weight: 700">` + dictionary[0][0] + 
+        `</span> as the perspective character.
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById("entities").innerHTML = `
+  <div class="ms-MessageBar" style="width: 100%">
+    <div class="ms-MessageBar-content">
+      <div class="ms-MessageBar-icon">
+        <i class="ms-Icon ms-Icon--Info"></i>
+      </div>
+      <div class="ms-MessageBar-text">
+        The most common entities in this text are <span style="font-weight: 700">` + dictionary[0][0] + `</span>, <span style="font-weight: 700">`
+         + dictionary[1][0] + `</span> and <span style="font-weight: 700">` + dictionary[2][0] +`</span>.
+      </div>
+    </div>
+  </div>`;
+}
+
 function refresh() {
+  loading();
   resetPronounData();
 
   Word.run(function (context) {
@@ -225,13 +261,25 @@ function resetPronounData() {
   lineChartData = [];
 }
 
+function movingAverage(data, width) {
+  return Array.from(ma(data, width));
+}
+
 function drawLineChart(key) {
+  document.getElementById("line_chart_vis").innerHTML = "";
+
   var line_margin = {top: 50, right: 50, bottom: 50, left: 60}
     , line_width = window.innerWidth - line_margin.left - line_margin.right
     , line_height = window.innerHeight - line_margin.top - line_margin.bottom;
 
+  var wordCounts = lineChartData.map(d => d["1st"] + d["2nd"] + d["3rd"]);
+
+  var densities = lineChartData.map((d, i) => wordCounts[i] > 0 ? (d[key] / wordCounts[i]) : 0);
+
+  let averages = movingAverage(densities, Math.ceil(densities.length * 0.15));
+
   var xScaleLine = d3.scaleLinear()
-    .domain([0, d3.max(lineChartData.map(d => d[key]))])
+    .domain([0, d3.max(densities)])
     .range([0, line_width]);
 
   var yScaleLine = d3.scaleLinear()
@@ -239,10 +287,10 @@ function drawLineChart(key) {
       .range([line_height, 0]);
 
   var line = d3.line()
-    .x(function(d) { return xScaleLine(d[key]); })
+    .x(function(d) { return xScaleLine(d); })
     .y(function(d, i) { return yScaleLine(i); })
     .curve(d3.curveBasis)
-    .defined(d => d[key] != undefined);
+    .defined(d => !isNaN(d));
 
   d3.select("#line_chart_vis").select("svg").remove();
 
@@ -257,23 +305,28 @@ function drawLineChart(key) {
       .call(d3.axisLeft(yScaleLine));
 
   line_svg.append("path")
-      .datum(lineChartData)
+      .datum(densities)
       .attr("class", "line")
       .attr("stroke", "#0084ff")
       .attr("fill", "none")
       .attr("d", line);
 
+  line_svg.append("path")
+    .datum(averages)
+    .attr("class", "lineAverage")
+    .attr("d", line);
+
   line_svg.append("g")
     .attr("class", "x-axis-line")
     .attr("transform", "translate(0,0)")
-    .call(d3.axisTop(xScaleLine));
+    .call(d3.axisTop(xScaleLine).ticks(5));
 
   line_svg.append("text")             
   .attr("transform",
         "translate(" + (line_width/2) + " ," + 
                        (- 30) + ")")
   .style("text-anchor", "middle")
-  .text("Count");
+  .text("Density");
 
   line_svg.append("text")
       .attr("transform", "rotate(-90)")
@@ -285,6 +338,12 @@ function drawLineChart(key) {
 }
 
 function redrawLineChart(key) {
+  var wordCounts = lineChartData.map(d => d["1st"] + d["2nd"] + d["3rd"]);
+
+  var densities = lineChartData.map((d, i) => wordCounts[i] > 0 ? (d[key] / wordCounts[i]) : 0);
+
+  let averages = movingAverage(densities, Math.ceil(densities.length * 0.15));
+
   var svg = d3.select("#line_chart_vis").select("svg");
   
   var margin = {top: 50, right: 50, bottom: 50, left: 60}
@@ -292,7 +351,7 @@ function redrawLineChart(key) {
     , height = window.innerHeight - margin.top - margin.bottom;
 
   var xScaleLine = d3.scaleLinear()
-    .domain([0, d3.max(lineChartData.map(d => d[key]))])
+    .domain([0, d3.max(densities)])
     .range([0, width]);
 
   var yScaleLine = d3.scaleLinear()
@@ -300,16 +359,21 @@ function redrawLineChart(key) {
     .range([height, 0]);
 
   var line = d3.line()
-    .x(function(d) { return xScaleLine(d[key]); })
+    .x(function(d) { return xScaleLine(d); })
     .y(function(d, i) { return yScaleLine(i); })
     .curve(d3.curveBasis)
-    .defined(d => d[key] != undefined);
+    .defined(d => !isNaN(d));
 
   // redraw the line
   d3.selectAll(".line")
-      .datum(lineChartData)
+      .datum(densities)
       .transition().duration(800)
       .attr("d", line);
+
+  d3.selectAll(".lineAverage")
+    .datum(averages)
+    .transition().duration(800)
+    .attr("d", line);
   
   // redraw the x axis with the new scale
   svg.selectAll(".x-axis-line").remove();
@@ -317,5 +381,5 @@ function redrawLineChart(key) {
   svg.append("g")
     .attr("class", "x-axis-line")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-    .call(d3.axisTop(xScaleLine));
+    .call(d3.axisTop(xScaleLine).ticks(5));
 }

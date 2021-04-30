@@ -5,6 +5,10 @@ import "../../assets/icon-80.png";
 
 const d3 = require("d3");
 
+import {
+  ma, dma, ema, sma, wma
+} from 'moving-averages';
+
 var messageQueue = [];
 
 var polarity = [];
@@ -18,20 +22,20 @@ worker.onmessage = function(e) {
 
   let avg = polarity.reduce((a, b) => a + b, 0) / polarity.length;
 
-  document.getElementById("polarity").innerHTML = `<div class="ms-MessageBar ms-MessageBar--` + (avg == 0 ? 'warning' : (avg < 0 ? 'error' : 'success')) + `">
-  <div class="ms-MessageBar-content">
-    <div class="ms-MessageBar-icon">
-      <i class="ms-Icon ms-Icon--Completed"></i>
-    </div>
-    <div class="ms-MessageBar-text">
-      The polarity of this text is <span style="font-weight: 700">` + Math.abs(avg.toFixed(2) * 100) + '% ' + (avg == 0 ? 'neutral' : (avg < 0 ? 'negative' : 'positive')) + `</span>.
-    </div>
-  </div>
-</div>`;
-
   if(messageQueue.length > 0) { 
     worker.postMessage({"text": messageQueue.pop().replace(/[^\x20-\x7E]/g, '')});
   } else {
+    document.getElementById("polarity").innerHTML = `<div class="ms-MessageBar ms-MessageBar--` + (avg == 0 ? 'warning' : (avg < 0 ? 'error' : 'success')) + `">
+    <div class="ms-MessageBar-content">
+      <div class="ms-MessageBar-icon">
+        <i class="ms-Icon ms-Icon--Completed"></i>
+      </div>
+      <div class="ms-MessageBar-text">
+        The polarity of this text is <span style="font-weight: 700">` + Math.abs(avg.toFixed(2) * 100) + '% ' + (avg == 0 ? 'neutral' : (avg < 0 ? 'negative' : 'positive')) + `</span>.
+      </div>
+    </div>
+  </div>`;
+  
     draw_chart();
     polarity.reverse();
     drawLineChart();
@@ -57,7 +61,19 @@ Office.onReady(info => {
   }
 });
 
+function loading() {
+  document.getElementById("polarity").innerHTML = `<div class="ms-Spinner"></div>`;
+  document.getElementById("sentiment_vis").innerHTML = `<br><div class="ms-Spinner"></div>`;
+  document.getElementById("line_chart_vis").innerHTML = `<div class="ms-Spinner"></div>`;
+
+  var SpinnerElements = document.querySelectorAll(".ms-Spinner");
+  for (var i = 0; i < SpinnerElements.length; i++) {
+    new fabric['Spinner'](SpinnerElements[i]);
+  }
+}
+
 function refresh() {
+  loading();
   polarity = [];
 
   Word.run(function (context) {
@@ -111,6 +127,7 @@ function refresh() {
 }
 
 function draw_chart() {
+  document.getElementById("sentiment_vis").innerHTML = "";
   d3.select("svg").remove();
 
   var margin = {top: 50, right: 50, bottom: 50, left: 50}
@@ -208,10 +225,18 @@ function draw_chart() {
   }
 }
 
+function movingAverage(data, width) {
+  return Array.from(ma(data, width));
+}
+
 function drawLineChart() {
+  document.getElementById("line_chart_vis").innerHTML = "";
+
   var line_margin = {top: 50, right: 50, bottom: 50, left: 60}
     , line_width = window.innerWidth - line_margin.left - line_margin.right
     , line_height = window.innerHeight - line_margin.top - line_margin.bottom;
+
+  var averages = movingAverage(polarity, Math.ceil(polarity.length * 0.15))
 
   var xScaleLine = d3.scaleLinear()
     .domain([-1, 1])
@@ -247,10 +272,15 @@ function drawLineChart() {
       .attr("fill", "none")
       .attr("d", line);
 
+  line_svg.append("path")
+    .datum(averages)
+    .attr("class", "lineAverage")
+    .attr("d", line);
+
   line_svg.append("g")
     .attr("class", "x-axis-line")
     .attr("transform", "translate(0,0)")
-    .call(d3.axisTop(xScaleLine));
+    .call(d3.axisTop(xScaleLine).ticks(5));
 
   line_svg.append("text")             
   .attr("transform",

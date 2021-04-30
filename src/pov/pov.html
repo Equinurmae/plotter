@@ -29,11 +29,14 @@
     <main id="app-body" class="ms-welcome__main" style="display: none;">
       <button class="ms-Button ms-Button--primary" id="refresh">
         <span class="ms-Button-label">Refresh</span> 
-      </button><br><br>
+      </button>
 
-      <p id="debug"></p>
+      <p id="debug" style="display: none;"></p>
 
-      <div class="ms-Pivot">
+      <p class="ms-fontSize-s" style="margin-bottom: 0; text-align: justify">Struggling with <span style="font-weight: 700">points of view</span>? Select a piece of text and we'll help you out! 
+      This feature works best over <span style="font-weight: 700">smaller texts with only a single point of view</span>.</p>
+
+      <div class="ms-Pivot" style="width: 100%">
         <ul class="ms-Pivot-links">
           <li class="ms-Pivot-link is-selected" data-content="total" title="Total" tabindex="1">
             Total
@@ -45,24 +48,15 @@
 
         <div class="ms-Pivot-content" data-content="total">
 
-          <div class="ms-MessageBar ms-MessageBar--success">
-            <div class="ms-MessageBar-content">
-              <div class="ms-MessageBar-icon">
-                <i class="ms-Icon ms-Icon--Completed"></i>
-              </div>
-              <div class="ms-MessageBar-text">
-                The selected text is most likely in <span id="guess" style="font-weight: 700">n/a person</span>, with <span id="entity" style="font-weight: 700">no one</span> as the perspective character.
-              </div>
-            </div>
-          </div>
+          <div id="summary"></div>
 
           <div id="pie_chart_vis"></div>
+
+          <div id="entities"></div>
 
         </div>
         
         <div class="ms-Pivot-content" data-content="change">
-
-          <p>Select a piece of text and we'll show how the parts of speech in it change over time!</p>
 
           <div class="ms-Dropdown">
             <label class="ms-Label">Pronouns</label>

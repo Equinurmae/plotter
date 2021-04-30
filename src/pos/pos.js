@@ -236,6 +236,7 @@ function getWordTypeInfo(index, words, tolerance, name) {
 function loading() {
   document.getElementById("active-passive").innerHTML = `<div class="ms-Spinner"></div>`;
   document.getElementById("notifications").innerHTML = `<br><div class="ms-Spinner"></div><br>`;
+  document.getElementById("line_chart_vis").innerHTML = `<div class="ms-Spinner"></div>`;
 
   var SpinnerElements = document.querySelectorAll(".ms-Spinner");
   for (var i = 0; i < SpinnerElements.length; i++) {
@@ -348,6 +349,9 @@ function movingAverage(data, width) {
 }
 
 function drawLineChart(index) {
+
+  document.getElementById("line_chart_vis").innerHTML = "";
+
   var wordCounts = lineChartData.map(d => d.map(x => x.count).reduce((a, b) => a + b, 0));
 
   var densities = lineChartData.map((d, i) => wordCounts[i] > 0 ? (d[index].count / wordCounts[i]) : 0);
@@ -424,7 +428,7 @@ function drawLineChart(index) {
         "translate(" + (width/2) + " ," + 
                        (- 30) + ")")
   .style("text-anchor", "middle")
-  .text("Count");
+  .text("Density");
 
   svg.append("text")
       .attr("transform", "rotate(-90)")
