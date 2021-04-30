@@ -5,6 +5,10 @@ import "../../assets/icon-80.png";
 
 const d3 = require("d3");
 
+import {
+  ma, dma, ema, sma, wma
+} from 'moving-averages';
+
 var barChartData = [
   {"name": "Adjectives", "count": 0},
   {"name": "Adverbs", "count": 0},
@@ -48,7 +52,7 @@ worker.onmessage = function(e) {
     // getWordTypeInfo(4, words, 0.3, "pronouns");
 
     lineChartData.reverse();
-    drawLineChart(5);
+    drawLineChart(0);
   }
 };
 
@@ -56,7 +60,7 @@ document.getElementById("pos_vis").innerHTML = "";
 
 /* global variables for the bar chart */
 
-var margin = {top: 30, right: 30, bottom: 50, left: 90}
+var margin = {top: 30, right: 30, bottom: 50, left: 80}
 , width = window.innerWidth - margin.left - margin.right
 , height = (5 * 50) - margin.top - margin.bottom;
 
@@ -148,6 +152,8 @@ function refresh() {
           messageQueue = results;
         }
         
+        drawBarChart();
+
         worker.postMessage({"text": messageQueue.pop()});
         document.getElementById("debug").innerHTML = "Message sent.";
       })
@@ -238,6 +244,34 @@ function loading() {
 }
 
 function drawBarChart() {
+  d3.select("svg").remove();
+
+  margin = {top: 30, right: 40, bottom: 50, left: 70}
+  , width = window.innerWidth - margin.left - margin.right
+  , height = (5 * 50) - margin.top - margin.bottom;
+
+  svg = d3.select("#pos_vis")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+  // create the scales for the bar chart
+  xScale = d3.scaleLinear()
+    .domain([0, 100])
+    .range([ 0, width]);
+
+  yScale = d3.scaleBand()
+    .range([ 0, height ])
+    .domain(barChartData.map(function(d) { return d.name; }))
+    .padding(.1);
+
+  colourScale = d3.scaleSequential()
+    .domain([0,d3.max(barChartData.map(d => d.count))])
+    .interpolator(d3.interpolateYlGnBu);
+
   // draw the bars
   svg.selectAll("myRect")
     .data(barChartData)
@@ -309,15 +343,23 @@ function redrawBarChart(animate = true) {
       .style("text-anchor", "end");
 }
 
+function movingAverage(data, width) {
+  return Array.from(ma(data, width));
+}
+
 function drawLineChart(index) {
-  var wordCounts = lineChartData.map(d => d.map(x => x.count).reduce((a, b) => a + b, 0)); 
+  var wordCounts = lineChartData.map(d => d.map(x => x.count).reduce((a, b) => a + b, 0));
+
+  var densities = lineChartData.map((d, i) => wordCounts[i] > 0 ? (d[index].count / wordCounts[i]) : 0);
+
+  let averages = movingAverage(densities, Math.ceil(lineChartData.length * 0.15));
 
   var margin = {top: 50, right: 50, bottom: 50, left: 60}
     , width = window.innerWidth - margin.left - margin.right
     , height = window.innerHeight - margin.top - margin.bottom;
 
   var xScaleLine = d3.scaleLinear()
-    .domain([0, d3.max(lineChartData.map(d => d[index].count))])
+    .domain([0, d3.max(densities)])
     .range([0, width]);
 
   var xScaleWordLine = d3.scaleLinear()
@@ -325,20 +367,20 @@ function drawLineChart(index) {
     .range([0, width]);
 
   var yScaleLine = d3.scaleLinear()
-      .domain([lineChartData.length-1,0])
+      .domain([densities.length-1,0])
       .range([height, 0]);
 
   var line = d3.line()
-    .x(function(d) { return xScaleLine(d[index].count); })
+    .x(function(d) { return xScaleLine(d); })
     .y(function(d, i) { return yScaleLine(i); })
     .curve(d3.curveBasis)
-    .defined(d => d[index].count != undefined);
+    .defined(d => !isNaN(d));
   
   var wordLine = d3.line()
     .x(function(d) { return xScaleWordLine(d); })
     .y(function(d, i) { return yScaleLine(i); })
     .curve(d3.curveBasis)
-    .defined(d => d != undefined);
+    .defined(d => !isNaN(d));
 
   d3.select("#line_chart_vis").select("svg").remove();
 
@@ -361,11 +403,16 @@ function drawLineChart(index) {
     .attr("d", wordLine);
 
   svg.append("path")
-      .datum(lineChartData)
+      .datum(densities)
       .attr("class", "line")
       .attr("stroke", "#0084ff")
       .attr("fill", "none")
       .attr("d", line);
+
+  svg.append("path")
+    .datum(averages)
+    .attr("class", "lineAverage")
+    .attr("d", line);
 
   svg.append("g")
     .attr("class", "x-axis-line")
@@ -390,12 +437,19 @@ function drawLineChart(index) {
 
 function redrawLineChart(index) {
   var svg = d3.select("#line_chart_vis").select("svg");
+
+  var wordCounts = lineChartData.map(d => d.map(x => x.count).reduce((a, b) => a + b, 0));
+
+  var densities = lineChartData.map((d, i) => wordCounts[i] > 0 ? (d[index].count / wordCounts[i]) : 0);
+
+  let averages = movingAverage(densities, Math.ceil(densities.length * 0.15));
+
   var margin = {top: 50, right: 50, bottom: 50, left: 60}
     , width = window.innerWidth - margin.left - margin.right
     , height = window.innerHeight - margin.top - margin.bottom;
 
   var xScaleLine = d3.scaleLinear()
-    .domain([0, d3.max(lineChartData.map(d => d[index].count))])
+    .domain([0, d3.max(densities)])
     .range([0, width]);
 
   var yScaleLine = d3.scaleLinear()
@@ -403,16 +457,21 @@ function redrawLineChart(index) {
     .range([height, 0]);
 
   var line = d3.line()
-    .x(function(d) { return xScaleLine(d[index].count); })
+    .x(function(d) { return xScaleLine(d); })
     .y(function(d, i) { return yScaleLine(i); })
     .curve(d3.curveBasis)
-    .defined(d => d[index].count != undefined);
+    .defined(d => !isNaN(d));
 
   // redraw the line
   d3.selectAll(".line")
-      .datum(lineChartData)
+      .datum(densities)
       .transition().duration(800)
       .attr("d", line);
+  
+  svg.selectAll(".lineAverage")
+    .datum(averages)
+    .transition().duration(800)
+    .attr("d", line);
   
   // redraw the x axis with the new scale
   svg.selectAll(".x-axis-line").remove();
@@ -420,5 +479,5 @@ function redrawLineChart(index) {
   svg.append("g")
     .attr("class", "x-axis-line")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-    .call(d3.axisTop(xScaleLine));
+    .call(d3.axisTop(xScaleLine).ticks(5));
 }

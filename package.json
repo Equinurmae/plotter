@@ -33,6 +33,7 @@
     "compromise-sentences": "^0.2.0",
     "compromise-syllables": "0.0.6",
     "d3": "^6.5.0",
+    "d3-regression": "^1.3.9",
     "jquery": "^3.5.1",
     "moving-averages": "^4.0.5",
     "popper.js": "^1.16.1"
