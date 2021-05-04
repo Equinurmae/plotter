@@ -15,20 +15,33 @@ var data = [];
 
 var messageQueue = [];
 
-const worker = new Worker("pacing_worker.js");
+const NUM_WORKERS = navigator.hardwareConcurrency || 4;
 
-worker.onmessage = function(e) {
-  document.getElementById("debug").innerHTML = "Message received.";
+var workers_returned = 0;
 
-  data.push(e.data);
+const workers = [];
 
-  if(messageQueue.length > 0) {
-    worker.postMessage({"text": messageQueue.pop()});
-  } else {
-    data.reverse();
-    draw_chart();
-  }
-};
+for(let i = 0; i < NUM_WORKERS; i++) {
+  workers.push(new Worker("pacing_worker.js"));
+
+  workers[i].onmessage = function(e) {
+    document.getElementById("debug").innerHTML = "Message received.";
+  
+    data.push(e.data);
+  
+    if(messageQueue.length > 0) {
+      workers[i].postMessage({"text": messageQueue.pop()});
+    } else {
+      workers_returned++;
+  
+      if(workers_returned == NUM_WORKERS) {    
+        data.reverse();
+        draw_chart();
+      }
+    }
+  };
+
+}
 
 /* global document, Office, Word */
 
@@ -132,8 +145,13 @@ function refresh(first = false) {
 
           messageQueue = results;
         }
+
+        workers_returned = 0;
+
+        for(let i = 0; i < NUM_WORKERS; i++) {
+          workers[i].postMessage({"id": i, "text": messageQueue.pop()});
+        }
         
-        worker.postMessage({"text": messageQueue.pop()});
         document.getElementById("debug").innerHTML = "Message sent.";
       })
       .then(context.sync);

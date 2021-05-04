@@ -133,7 +133,7 @@ function addInfo(person, dictionary) {
   </div>`;
 
   document.getElementById("entities").innerHTML = `
-  <div class="ms-MessageBar" style="width: 100%">
+  <div class="ms-MessageBar">
     <div class="ms-MessageBar-content">
       <div class="ms-MessageBar-icon">
         <i class="ms-Icon ms-Icon--Info"></i>
