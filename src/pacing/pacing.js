@@ -8,6 +8,7 @@ import {
 } from 'moving-averages';
 
 const d3 = require("d3");
+const regression = require("d3-regression");
 
 var options = {"readability": true, "words": true, "average": true, "z-scores": false, "detail": 100};
 
@@ -15,7 +16,7 @@ var data = [];
 
 var messageQueue = [];
 
-const NUM_WORKERS = navigator.hardwareConcurrency || 4;
+const NUM_WORKERS = 1;
 
 var workers_returned = 0;
 
@@ -181,8 +182,15 @@ function draw_chart() {
 
   let readability = data.map(x => isNaN(x.readability) ? 0 : x.readability);
 
+  let xs = readability.map(function(x, i) {return {"readability": x, "index": i + 1};});
+
   document.getElementById("detail").min = 2;
   document.getElementById("detail").max = data.length - 2;
+
+  let loess = regression.regressionLoess()
+    .y(d => d.readability)
+    .x(d => d.index)
+    .bandwidth(0.25);
 
   let averages = movingAverage(readability, Math.ceil(data.length * 0.15));
 
@@ -218,10 +226,9 @@ function draw_chart() {
     .defined(d => !isNaN(d.readability));
 
   var averageLine = d3.line()
-    .x(function(d) { return xScaleReadability(d); })
-    .y(function(d, i) { return yScale(i); })
-    .curve(d3.curveBasis)
-    .defined(d => d != undefined);
+    .x(function(d) { return xScaleReadability(d[1]); })
+    .y(function(d) { return yScale(d[0]); })
+    .curve(d3.curveBasis);
 
   var wordLine = d3.line()
     .x(function(d) { return xScaleWords(d.words); })
@@ -270,7 +277,7 @@ function draw_chart() {
 
   if(options.average) {
     svg.append("path")
-      .datum(averages)
+      .datum(loess(xs))
       .attr("class", "lineAverage")
       .attr("d", averageLine);
   }
