@@ -2,6 +2,7 @@ importScripts('https://unpkg.com/compromise@latest/builds/compromise.min.js');
 importScripts('https://unpkg.com/compromise-syllables@0.0.6/builds/compromise-syllables.min.js');
 self.nlp.extend(self.compromiseSyllables);
 
+// calculate the readability
 self.onmessage = function(e) {
     let doc = self.nlp.tokenize(e.data.text);
   

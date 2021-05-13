@@ -2,32 +2,32 @@
 import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
-import nlp from "compromise";
-import syllables from "compromise-syllables";
-import sentences from "compromise-sentences"
-nlp.extend(syllables);
-nlp.extend(sentences);
 
-/* global document, Office, Word */
-
-var messageQueue = [];
+// global variables
 
 var data = {characters: 0, words: 0, sentences: 0, syllables: 0, hardWords: 0};
+
+// web workers
+
+var messageQueue = [];
 
 const worker = new Worker("metrics_worker.js");
 
 worker.onmessage = function(e) {
   document.getElementById("debug").innerHTML = "Message received.";
 
+  // update total counts
   data.characters += e.data.characters;
   data.words += e.data.words;
   data.sentences += e.data.sentences;
   data.syllables += e.data.syllables;
   data.hardWords += e.data.hardWords;
 
+  // check if messages left in queue
   if(messageQueue.length > 0) { 
     worker.postMessage({"text": messageQueue.pop()});
   } else {
+    // calculate the final readability scores
     data.hardWords = (data.hardWords / data.words) * 100;
 
     data.hardWords = Math.min(Math.max(data.hardWords, 0), 1);
@@ -36,6 +36,7 @@ worker.onmessage = function(e) {
     let fkr = 0.39 * (data.words / data.sentences) + 11.8 * (data.syllables / data.words) - 15.59;
     let gunning = 0.4 * ((data.words / data.sentences) + data.hardWords);
 
+    // update the front-end
     document.getElementById("character-count").innerHTML = data.characters.toLocaleString();
     document.getElementById("word-count").innerHTML = data.words.toLocaleString();
     document.getElementById("sentence-count").innerHTML = data.sentences.toLocaleString();
@@ -49,6 +50,8 @@ worker.onmessage = function(e) {
     document.getElementById("gunning-grade").innerHTML = gradeToAge(Math.round(gunning));
   }
 };
+
+/* global document, Office, Word */
 
 Office.onReady(info => {
   if (info.host === Office.HostType.Word) {
@@ -67,6 +70,7 @@ Office.onReady(info => {
   }
 });
 
+// function to display the spinners
 function loading() {
   document.getElementById("character-count").innerHTML = `<div class="ms-Spinner"></div>`;
   document.getElementById("word-count").innerHTML = `<div class="ms-Spinner"></div>`;
@@ -87,33 +91,39 @@ function loading() {
   }
 }
 
+// main function
 function refresh() {
+  // reset all data
   loading();
 
   data = {characters: 0, words: 0, sentences: 0, syllables: 0, hardWords: 0};
 
+  // query document
   Word.run(function (context) {
     let paragraphs = context.document.body.paragraphs;
     paragraphs.load("text");
 
     var selection = context.document.getSelection();
-
     selection.load("text");
-
     selection.paragraphs.load("text");
 
     return context.sync()
       .then(function() {
         document.getElementById("debug").innerHTML = "Message sending...";
         
+        // get selection and split into paragraphs
         if(selection.text.length == 0) {
+          // no selection, so use body text
           document.getElementById("paragraph-count").innerHTML = paragraphs.items.length.toLocaleString();
           messageQueue = paragraphs.items.map(paragraph => paragraph.text);
         } else {
+          // use selection
           document.getElementById("paragraph-count").innerHTML = selection.paragraphs.items.length.toLocaleString();
           let results = selection.paragraphs.items.map(paragraph => paragraph.text);
 
           if(results.length > 1) {
+            // one or more paragraphs selected
+            // use regex to find the intersections
             let wholeText = results.join('\r');
             let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
 
@@ -125,12 +135,15 @@ function refresh() {
               results[results-1] = lastParagraphMatch[1];
             }
           } else {
+            // one or fewer paragraphs selected
             results[0] = selection.text;
           }
 
+          // update message queue
           messageQueue = results;
         }
         
+        // start web worker processing
         worker.postMessage({"text": messageQueue.pop()});
         document.getElementById("debug").innerHTML = "Message sent.";
       })
@@ -144,6 +157,7 @@ function refresh() {
   });
 }
 
+// function to return the age range from a grade level
 function gradeToAge(grade) {
     switch(grade) {
         case 0:

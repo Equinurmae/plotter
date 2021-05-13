@@ -6,6 +6,7 @@ self.onmessage = function(e) {
     self.postMessage(self.polarity(doc));
 };
 
+// function to calculate the sentiment polarity
 function polarity(doc) {
     let polarity = 0;
     doc.forEach(x => polarity += ("profile" in x ? x.profile.sentiment : 0));

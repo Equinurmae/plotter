@@ -3,39 +3,44 @@ import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
 
-import {
-  ma, dma, ema, sma, wma
-} from 'moving-averages';
+import {ma} from 'moving-averages';
 
 const d3 = require("d3");
 const regression = require("d3-regression");
+
+// global variables
 
 var options = {"readability": true, "words": true, "average": true, "z-scores": false, "detail": 100};
 
 var data = [];
 
+// web workers
+
 var messageQueue = [];
 
 const NUM_WORKERS = 1;
-
 var workers_returned = 0;
-
 const workers = [];
 
+// spawn multiple web workers
 for(let i = 0; i < NUM_WORKERS; i++) {
   workers.push(new Worker("pacing_worker.js"));
 
   workers[i].onmessage = function(e) {
     document.getElementById("debug").innerHTML = "Message received.";
   
+    // update the data
     data.push(e.data);
   
+    // check if more messages in queue
     if(messageQueue.length > 0) {
       workers[i].postMessage({"text": messageQueue.pop()});
     } else {
       workers_returned++;
   
-      if(workers_returned == NUM_WORKERS) {    
+      // check if all workers have returned
+      if(workers_returned == NUM_WORKERS) {
+        // update the line chart   
         data.reverse();
         draw_chart();
       }
@@ -70,32 +75,38 @@ Office.onReady(info => {
   }
 });
 
+// function triggers on readability option change
 function onReadability() {
   options.readability = document.getElementById("readability").checked;
   refresh();
 }
 
+// function triggered on words option change
 function onWords() {
   options.words = document.getElementById("words").checked;
   refresh();
 }
 
+// function triggered on average option change
 function onAverage() {
   options.average = document.getElementById("average").checked;
   refresh();
 }
 
+// functino triggered on z-scores option changed
 function onZ() {
   options["z-scores"] = document.getElementById("z-scores").checked;
   refresh();
 }
 
+// function triggered on average window slider changed
 function onDetail() {
   options.detail = document.getElementById("detail").value;
   document.getElementById("detail_label").innerHTML = options.detail;
   refresh();
 }
 
+// function to update the spinners
 function loading() {
   document.getElementById("pacing_vis").innerHTML = `<div class="ms-Spinner"></div>`;
 
@@ -105,9 +116,10 @@ function loading() {
   }
 }
 
-function refresh(first = false) {
+// main function
+function refresh() {
+  // reset all data
   loading();
-  
   data = [];
 
   Word.run(function (context) {
@@ -115,38 +127,44 @@ function refresh(first = false) {
     paragraphs.load("text");
 
     var selection = context.document.getSelection();
-
     selection.load("text");
-
     selection.paragraphs.load("text");
 
     return context.sync()
-      .then(function() {
-        document.getElementById("debug").innerHTML = "Message sending...";
-        
-        if(selection.text.length == 0) {
-          messageQueue = paragraphs.items.map(paragraph => paragraph.text);
-        } else {
-          let results = selection.paragraphs.items.map(paragraph => paragraph.text);
+    .then(function() {
+      document.getElementById("debug").innerHTML = "Message sending...";
+      
+      // get selection and split into paragraphs
+      if(selection.text.length == 0) {
+        // no selection, so use body text
+        messageQueue = paragraphs.items.map(paragraph => paragraph.text);
+      } else {
+        // use selection
+        let results = selection.paragraphs.items.map(paragraph => paragraph.text);
 
-          if(results.length > 1) {
-            let wholeText = results.join('\r');
-            let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
+        if(results.length > 1) {
+          // one or more paragraphs selected
+          // use regex to find the intersections
+          let wholeText = results.join('\r');
+          let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
 
-            if(match != null) {
-              let firstParagraphMatch = new RegExp(match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(results[0]);
-              results[0] = firstParagraphMatch[1];
+          if(match != null) {
+            let firstParagraphMatch = new RegExp(match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(results[0]);
+            results[0] = firstParagraphMatch[1];
 
-              let lastParagraphMatch = new RegExp('(.*)' + match[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g').exec(results[results.length-1]);
-              results[results-1] = lastParagraphMatch[1];
-            }
-          } else {
-            results[0] = selection.text;
+            let lastParagraphMatch = new RegExp('(.*)' + match[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g').exec(results[results.length-1]);
+            results[results-1] = lastParagraphMatch[1];
           }
-
-          messageQueue = results;
+        } else {
+          // one or fewer paragraphs selected
+          results[0] = selection.text;
         }
 
+        // update message queue
+        messageQueue = results;
+      }
+
+        // start web worker processing
         workers_returned = 0;
 
         for(let i = 0; i < NUM_WORKERS; i++) {
@@ -165,14 +183,17 @@ function refresh(first = false) {
   });
 }
 
+// function to calculate moving averages
 function movingAverage(data, width) {
   return Array.from(ma(data, width));
 }
 
+// function to calculate z-scores
 function z(point, mean, deviation) {
   return Math.abs((point.readability - mean) / deviation);
 }
 
+// functino to draw the line chart
 function draw_chart() {
   document.getElementById("pacing_vis").innerHTML = "";
 
@@ -180,25 +201,26 @@ function draw_chart() {
   , width = window.innerWidth - margin.left - margin.right
   , height = window.innerHeight - margin.top - margin.bottom;
 
+  // get chart data
   let readability = data.map(x => isNaN(x.readability) ? 0 : x.readability);
-
   let xs = readability.map(function(x, i) {return {"readability": x, "index": i + 1};});
+  let averages = movingAverage(readability, Math.ceil(data.length * 0.15));
 
+  let mean = d3.mean(readability);
+  let deviation = d3.deviation(readability);
+  let zs = data.map(d => z(d, mean, deviation));
+
+  // init detail slider (currently hidden on front end)
   document.getElementById("detail").min = 2;
   document.getElementById("detail").max = data.length - 2;
 
+  // init loess generator
   let loess = regression.regressionLoess()
     .y(d => d.readability)
     .x(d => d.index)
     .bandwidth(0.25);
 
-  let averages = movingAverage(readability, Math.ceil(data.length * 0.15));
-
-  let mean = d3.mean(readability);
-  let deviation = d3.deviation(readability);
-
-  let zs = data.map(d => z(d, mean, deviation));
-
+  // create the scales for the line chart
   var xScaleReadability = d3.scaleLinear()
     .domain([0, d3.max(readability)])
     .range([0, width]);
@@ -219,6 +241,7 @@ function draw_chart() {
     .domain([data.length-1,0])
     .range([height, 0]);
 
+  // create the line generators for the chart
   var readabilityLine = d3.line()
     .x(function(d) { return xScaleReadability(d.readability); })
     .y(function(d, i) { return yScale(i); })
@@ -242,6 +265,7 @@ function draw_chart() {
     .curve(d3.curveBasis)
     .defined(d => d != undefined);
 
+  // draw the svg
   d3.select("svg").remove();
 
   var svg = d3.select("#pacing_vis").append("svg")
@@ -250,10 +274,12 @@ function draw_chart() {
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+  // draw the y axis
   svg.append("g")
     .attr("class", "y axis")
     .call(d3.axisLeft(yScale));
 
+  // draw the word count line
   if(options.words) {
     svg.append("path")
       .datum(data)
@@ -261,6 +287,7 @@ function draw_chart() {
       .attr("d", wordLine);
   }
 
+  // draw the readability line
   if(options.readability) {
     svg.append("path")
       .datum(data)
@@ -268,6 +295,7 @@ function draw_chart() {
       .attr("d", readabilityLine);
   }
 
+  // draw the z-scores line
   if(options["z-scores"]) {
     svg.append("path")
       .datum(zs)
@@ -275,6 +303,7 @@ function draw_chart() {
       .attr("d", zLine);
   }
 
+  // draw the average line
   if(options.average) {
     svg.append("path")
       .datum(loess(xs))
@@ -282,6 +311,7 @@ function draw_chart() {
       .attr("d", averageLine);
   }
 
+  // draw the x axis
   svg.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0,0)")

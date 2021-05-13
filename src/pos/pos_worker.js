@@ -8,6 +8,7 @@ self.onmessage = function(e) {
     self.postMessage(self.pos(doc));
 };
 
+// function to extract POS data
 function pos(doc) {
     let pronouns = doc.match("#Pronoun").length;
     let proper_nouns = doc.match("#ProperNoun").length;

@@ -3,12 +3,12 @@ import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
 
-import nlp from "compromise";
+// global variables
 
 var words = 0;
 var target = 100000;
 
-/* global document, Office, Word */
+// web workers
 
 var messageQueue = [];
 
@@ -24,6 +24,8 @@ worker.onmessage = function(e) {
     displayStructure(words);
   }
 };
+
+/* global document, Office, Word */
 
 Office.onReady(info => {
   if (info.host === Office.HostType.Word) {
@@ -44,11 +46,13 @@ Office.onReady(info => {
   }
 });
 
+// function triggered by target words input change
 function onTarget() {
   target = document.getElementById("target").value;
   refresh();
 }
 
+// function that updates the spinners
 function loading() {
   document.getElementById("structure-table").innerHTML = `<div class="ms-Spinner"></div>`;
 
@@ -58,31 +62,36 @@ function loading() {
   }
 }
 
+// main function
 function refresh() {
+  // reset all data
   words = 0;
-
   loading();
 
+  // query document
   Word.run(function (context) {
     let paragraphs = context.document.body.paragraphs;
     paragraphs.load("text");
 
     var selection = context.document.getSelection();
-
     selection.load("text");
-
     selection.paragraphs.load("text");
 
     return context.sync()
       .then(function() {
         document.getElementById("debug").innerHTML = "Message sending...";
         
+        // get selection and split into paragraphs
         if(selection.text.length == 0) {
+          // no selection, so use body text
           messageQueue = paragraphs.items.map(paragraph => paragraph.text);
         } else {
+          // use selection
           let results = selection.paragraphs.items.map(paragraph => paragraph.text);
 
           if(results.length > 1) {
+            // one or more paragraphs selected
+            // use regex to find the intersections
             let wholeText = results.join('\r');
             let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
 
@@ -94,12 +103,15 @@ function refresh() {
               results[results-1] = lastParagraphMatch[1];
             }
           } else {
+            // one or fewer paragraphs selected
             results[0] = selection.text;
           }
 
+          // update message queue
           messageQueue = results;
         }
         
+        // start web worker processing
         worker.postMessage({"text": messageQueue.pop()});
         document.getElementById("debug").innerHTML = "Message sent.";
       })
@@ -113,6 +125,7 @@ function refresh() {
   });
 }
 
+// function to draw the three act table
 function three_act(words, target) {
   return `<table class="ms-Table" style="width: 100%" id="structure-table">
     <thead>
@@ -144,6 +157,7 @@ function three_act(words, target) {
   </table>`;
 }
 
+// function to draw the four act table
 function four_act(words, target) {
   return `<table class="ms-Table" style="width: 100%" id="structure-table">
     <thead>
@@ -181,6 +195,7 @@ function four_act(words, target) {
   </table>`;
 }
 
+// function to draw the save the cat table
 function save_the_cat(words, target) {
   return `Act One
   <table class="ms-Table" style="width: 100%" id="structure-table">
@@ -334,6 +349,7 @@ function save_the_cat(words, target) {
   `;
 }
 
+// function to display the correct structure
 function displayStructure(words) {
   let structure = document.getElementById("structure").value;
 

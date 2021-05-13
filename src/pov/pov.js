@@ -3,25 +3,26 @@ import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
 
+import {ma} from 'moving-averages';
+
 const d3 = require("d3");
 
-import {
-  ma, dma, ema, sma, wma
-} from 'moving-averages';
+// global variables
+
+var pronoun_data = {"1st": 0, "2nd": 0, "3rd": 0};
+var entities = [];
+var lineChartData = [];
+
+// web workers
 
 var messageQueue = [];
 
 const worker = new Worker("pov_worker.js");
 
-var pronoun_data = {"1st": 0, "2nd": 0, "3rd": 0};
-
-var entities = [];
-
-var lineChartData = [];
-
 worker.onmessage = function(e) {
   document.getElementById("debug").innerHTML = "Message received.";
 
+  // update total counts and pie chart
   updatePronounData(e.data.pronouns);
   lineChartData.push(e.data.pronouns);
 
@@ -29,19 +30,22 @@ worker.onmessage = function(e) {
 
   redrawPieChart(messageQueue.length == 0);
 
+  // check if messages left in queue
   if(messageQueue.length > 0) {  
     worker.postMessage({"text": messageQueue.pop()});
   } else {
-    let dictionary = mode(entities);
-
+    // update front end
+    let dictionary = createDictionary(entities);
     addInfo(Object.entries(pronoun_data).sort((a,b) => a[1] - b[1])[2][0], dictionary);
 
+    // draw line chart
     lineChartData.reverse();
     drawLineChart("1st");
   }
 };
 
-function mode(array)
+// creates a dictionary of keys to counts, sorted by most common key
+function createDictionary(array)
 {
     let entities = {};
 
@@ -55,6 +59,8 @@ function mode(array)
 
     return Object.entries(entities).sort((a,b) => b[1] - a[1]);
 }
+
+// global bar chart variables, so the chart can be updated in helper functions
 
 var margin = {top: 30, right: 30, bottom: 30, left: 30}
 , width = window.innerWidth - margin.left - margin.right
@@ -103,10 +109,12 @@ Office.onReady(info => {
   }
 });
 
+// function called on pronoun dropdown change
 function onLineKeyChange() {
   redrawLineChart(document.getElementById("line_key").value);
 }
 
+// function to update the spinners
 function loading() {
   document.getElementById("summary").innerHTML = `<div class="ms-Spinner"></div>`;
   document.getElementById("entities").innerHTML = `<div class="ms-Spinner"></div>`;
@@ -118,6 +126,7 @@ function loading() {
   }
 }
 
+// function to draw the message bars
 function addInfo(person, dictionary) {
   document.getElementById("summary").innerHTML = `
   <div class="ms-MessageBar ms-MessageBar--success">
@@ -146,7 +155,9 @@ function addInfo(person, dictionary) {
   </div>`;
 }
 
+// main function
 function refresh() {
+  // reset all data
   loading();
   resetPronounData();
 
@@ -155,38 +166,43 @@ function refresh() {
     paragraphs.load("text");
 
     var selection = context.document.getSelection();
-
     selection.load("text");
-
     selection.paragraphs.load("text");
 
     return context.sync()
-      .then(function() {
-        document.getElementById("debug").innerHTML = "Message sending...";
-        
-        if(selection.text.length == 0) {
-          messageQueue = paragraphs.items.map(paragraph => paragraph.text);
-        } else {
-          let results = selection.paragraphs.items.map(paragraph => paragraph.text);
+    .then(function() {
+      document.getElementById("debug").innerHTML = "Message sending...";
+      
+      // get selection and split into paragraphs
+      if(selection.text.length == 0) {
+        // no selection, so use body text
+        messageQueue = paragraphs.items.map(paragraph => paragraph.text);
+      } else {
+        // use selection
+        let results = selection.paragraphs.items.map(paragraph => paragraph.text);
 
-          if(results.length > 1) {
-            let wholeText = results.join('\r');
-            let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
+        if(results.length > 1) {
+          // one or more paragraphs selected
+          // use regex to find the intersections
+          let wholeText = results.join('\r');
+          let match = new RegExp('(.*)' + selection.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(wholeText);
 
-            if(match != null) {
-              let firstParagraphMatch = new RegExp(match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(results[0]);
-              results[0] = firstParagraphMatch[1];
+          if(match != null) {
+            let firstParagraphMatch = new RegExp(match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(.*)', 'g').exec(results[0]);
+            results[0] = firstParagraphMatch[1];
 
-              let lastParagraphMatch = new RegExp('(.*)' + match[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g').exec(results[results.length-1]);
-              results[results-1] = lastParagraphMatch[1];
-            }
-          } else {
-            results[0] = selection.text;
+            let lastParagraphMatch = new RegExp('(.*)' + match[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g').exec(results[results.length-1]);
+            results[results-1] = lastParagraphMatch[1];
           }
-
-          messageQueue = results;
+        } else {
+          // one or fewer paragraphs selected
+          results[0] = selection.text;
         }
-        
+
+        // update message queue
+        messageQueue = results;
+      }
+        // start web worker processing
         worker.postMessage({"text": messageQueue.pop()});
         document.getElementById("debug").innerHTML = "Message sent.";
       })
@@ -200,36 +216,43 @@ function refresh() {
   });
 }
 
+// function to draw the pie chart
 function drawPieChart() {
+  // get pie chart data
   var data_ready = pie(Object.entries(pronoun_data).map(function(x) {return {"key": x[0], "value": x[1]}; }));
 
+  // draw the slices
   svg
-  .selectAll('mySlices')
-  .data(data_ready)
-  .enter()
-  .append('path')
-  .attr("class", "arc")
-  .attr('d', arcGenerator)
-  .attr('fill', (d) => colourScale(d.data.key))
-  .attr("stroke", "white")
-  .style("stroke-width", "2px");
+    .selectAll('mySlices')
+    .data(data_ready)
+    .enter()
+    .append('path')
+    .attr("class", "arc")
+    .attr('d', arcGenerator)
+    .attr('fill', (d) => colourScale(d.data.key))
+    .attr("stroke", "white")
+    .style("stroke-width", "2px");
 
-svg
-  .selectAll('mySlices')
-  .data(data_ready)
-  .enter()
-  .append('text')
-  .attr("class", "label")
-  .text(function(d){ return d.data.key})
-  .attr("transform", function(d) { return "translate(" + arcGenerator.centroid(d) + ")";  })
-  .style("text-anchor", "middle")
-  .style("font-size", 17)
-  .style("opacity", d => d.data.value > 0 ? 100 : 0);
+  // draw the labels
+  svg
+    .selectAll('mySlices')
+    .data(data_ready)
+    .enter()
+    .append('text')
+    .attr("class", "label")
+    .text(function(d){ return d.data.key})
+    .attr("transform", function(d) { return "translate(" + arcGenerator.centroid(d) + ")";  })
+    .style("text-anchor", "middle")
+    .style("font-size", 17)
+    .style("opacity", d => d.data.value > 0 ? 100 : 0);
 }
 
+// function to redraw the pie chart
 function redrawPieChart(animate) {
+  // reset the chart data
   var data_ready = pie(Object.entries(pronoun_data).map(function(x) {return {"key": x[0], "value": x[1]}; }));
 
+  // redraw the slices
   svg
     .selectAll('.arc')
     .data(data_ready)
@@ -239,6 +262,7 @@ function redrawPieChart(animate) {
     .attr("stroke", "white")
     .style("stroke-width", "2px");
 
+  // redraw the labels
   svg
     .selectAll('.label')
     .data(data_ready)
@@ -250,21 +274,25 @@ function redrawPieChart(animate) {
     .style("opacity", d => d.data.value > 0 ? 100 : 0);
 }
 
+// function to update the pronoun data
 function updatePronounData(newData) {
   pronoun_data["1st"] += newData["1st"];
   pronoun_data["2nd"] += newData["2nd"];
   pronoun_data["3rd"] += newData["3rd"];
 }
 
+// function to reset the chart data
 function resetPronounData() {
   pronoun_data = {"1st": 0, "2nd": 0, "3rd": 0};
   lineChartData = [];
 }
 
+// function to calculate the moving averages
 function movingAverage(data, width) {
   return Array.from(ma(data, width));
 }
 
+// function to draw the line chart
 function drawLineChart(key) {
   document.getElementById("line_chart_vis").innerHTML = "";
 
@@ -272,12 +300,12 @@ function drawLineChart(key) {
     , line_width = window.innerWidth - line_margin.left - line_margin.right
     , line_height = window.innerHeight - line_margin.top - line_margin.bottom;
 
+  // get the chart data
   var wordCounts = lineChartData.map(d => d["1st"] + d["2nd"] + d["3rd"]);
-
   var densities = lineChartData.map((d, i) => wordCounts[i] > 0 ? (d[key] / wordCounts[i]) : 0);
+  var averages = movingAverage(densities, Math.ceil(densities.length * 0.15));
 
-  let averages = movingAverage(densities, Math.ceil(densities.length * 0.15));
-
+  // create the chart scales
   var xScaleLine = d3.scaleLinear()
     .domain([0, d3.max(densities)])
     .range([0, line_width]);
@@ -286,12 +314,14 @@ function drawLineChart(key) {
       .domain([lineChartData.length-1,0])
       .range([line_height, 0]);
 
+  // create the line generator
   var line = d3.line()
     .x(function(d) { return xScaleLine(d); })
     .y(function(d, i) { return yScaleLine(i); })
     .curve(d3.curveBasis)
     .defined(d => !isNaN(d));
 
+  // create the svg
   d3.select("#line_chart_vis").select("svg").remove();
 
   var line_svg = d3.select("#line_chart_vis").append("svg")
@@ -300,10 +330,12 @@ function drawLineChart(key) {
     .append("g")
       .attr("transform", "translate(" + line_margin.left + "," + line_margin.top + ")");
 
+  // draw the y axis
   line_svg.append("g")
       .attr("class", "y-axis-line")
       .call(d3.axisLeft(yScaleLine));
 
+  // draw the lines
   line_svg.append("path")
       .datum(densities)
       .attr("class", "line")
@@ -316,6 +348,7 @@ function drawLineChart(key) {
     .attr("class", "lineAverage")
     .attr("d", line);
 
+  // draw the x axis
   line_svg.append("g")
     .attr("class", "x-axis-line")
     .attr("transform", "translate(0,0)")
@@ -337,12 +370,12 @@ function drawLineChart(key) {
       .text("Paragraph #");
 }
 
+// function to redraw the line chart
 function redrawLineChart(key) {
+  // update the chart data
   var wordCounts = lineChartData.map(d => d["1st"] + d["2nd"] + d["3rd"]);
-
   var densities = lineChartData.map((d, i) => wordCounts[i] > 0 ? (d[key] / wordCounts[i]) : 0);
-
-  let averages = movingAverage(densities, Math.ceil(densities.length * 0.15));
+  var averages = movingAverage(densities, Math.ceil(densities.length * 0.15));
 
   var svg = d3.select("#line_chart_vis").select("svg");
   
@@ -350,6 +383,7 @@ function redrawLineChart(key) {
     , width = window.innerWidth - margin.left - margin.right
     , height = window.innerHeight - margin.top - margin.bottom;
 
+  // remake the scales
   var xScaleLine = d3.scaleLinear()
     .domain([0, d3.max(densities)])
     .range([0, width]);
@@ -358,13 +392,14 @@ function redrawLineChart(key) {
     .domain([lineChartData.length-1,0])
     .range([height, 0]);
 
+  // remake the line generator
   var line = d3.line()
     .x(function(d) { return xScaleLine(d); })
     .y(function(d, i) { return yScaleLine(i); })
     .curve(d3.curveBasis)
     .defined(d => !isNaN(d));
 
-  // redraw the line
+  // redraw the lines
   d3.selectAll(".line")
       .datum(densities)
       .transition().duration(800)

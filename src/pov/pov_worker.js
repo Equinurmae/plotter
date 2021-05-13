@@ -6,6 +6,7 @@ self.onmessage = function(e) {
 
     var compendium;
     
+    // if compendium crashes, return empty data
     try {
         compendium = self.compendium.analyse(e.data.text);
     } catch (error) {
@@ -15,6 +16,7 @@ self.onmessage = function(e) {
     self.postMessage(self.count_pronouns(doc, compendium));
 };
 
+// function to count the pronouns
 function count_pronouns(doc, compendium) {
     let first = doc.match("(I|me|my|mine|myself|we|us|our|ours|ourselves)").length;
     let second = doc.match("(you|your|yours|yourself|yourselves)").length;
