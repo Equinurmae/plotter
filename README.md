@@ -11,4 +11,4 @@ Most, if not all, existing editing tools focus on spelling- and grammar-checking
 
 # Instructions
 
-To build and run the Microsoft Word add-in, run ``npm install`` followed by ``npm run``. If everything goes according to plan, Word will open up and _Plotter_ will be available in the top right of the Home tab.
+To build and run the Microsoft Word add-in, run ``npm install`` followed by ``npm start``. If everything goes according to plan, Word will open up and _Plotter_ will be available in the top right of the Home tab.
